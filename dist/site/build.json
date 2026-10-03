@@ -1,0 +1,26 @@
+{
+  "app": "Letterman",
+  "version": "0.1.1",
+  "stage": "alpha",
+  "built": "2026-10-03T01:05:27.963Z",
+  "commit": "8f9836e87fb7",
+  "uncommitted_changes": false,
+  "preview": false,
+  "content": [
+    {
+      "course": "Animation_101",
+      "modules": [
+        {
+          "id": "Animation_101/Module_0",
+          "standard": "1.2.0",
+          "revision": 4
+        },
+        {
+          "id": "Animation_101/Module_1",
+          "standard": "1.3.0",
+          "revision": 4
+        }
+      ]
+    }
+  ]
+}

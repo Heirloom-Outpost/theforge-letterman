@@ -1,0 +1,38 @@
+#!/bin/sh
+# Pre-push hook, Estate Publication Standard rule 7.
+# Refuses a push whose tracked content matches a CREDENTIAL VALUE SHAPE.
+# Deliberately NOT keyed on bare keywords: the operational record and this
+# repository's own manifest discuss tokens, stream keys and secrets in prose,
+# and a hook that has to be overridden on its first use teaches the wrong
+# lesson about hooks. Shapes, not words.
+
+fail=0
+report() { echo "PRE-PUSH REFUSED: $1"; fail=1; }
+
+scan() { git grep -nIE "$1" -- . ':(exclude).githooks/*' 2>/dev/null; }
+
+check() {
+  hits=$(scan "$2")
+  if [ -n "$hits" ]; then
+    report "$1"
+    echo "$hits" | sed 's/^/    /'
+  fi
+}
+
+check "Twitch/IRC oauth token"      'oauth:[A-Za-z0-9]{20,}'
+check "Twitch stream key"           'live_[0-9]{6,}_[A-Za-z0-9]{20,}'
+check "GitHub token"                'gh[pousr]_[A-Za-z0-9]{20,}'
+check "AWS access key id"           'AKIA[0-9A-Z]{16}'
+check "Slack token"                 'xox[baprs]-[A-Za-z0-9-]{10,}'
+check "PEM private key block"       '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+check "Bearer credential value"     '[Bb]earer[[:space:]]+[A-Za-z0-9._-]{20,}'
+check "secret assigned to a value"  '(password|passwd|secret|api[_-]?key|token|client[_-]?secret)[[:space:]]*[:=][[:space:]]*.?[A-Za-z0-9._-]{16,}'
+check "long hex blob (40+)"         '[a-f0-9]{40,}'
+check "SSN-shaped"                  '[0-9]{3}-[0-9]{2}-[0-9]{4}'
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "Nothing was pushed. Rule 7: code enforces the checks, the judgments stay the Director's."
+  exit 1
+fi
+exit 0
