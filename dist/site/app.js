@@ -31,9 +31,23 @@
   const { courseKey, COURSE, glossary, buildModel } = window.LMModel.create(CONTENT);
   // The release cadence (the Director, 2026-10-02): a released module opens on its calendar date, at the start of
   // that day where the student is. The stage window and a preview build are never locked.
-  const TODAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date());
+  const today = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let TODAY = today(new Date());
   const LOCKED = {};
-  if (!STAGE && !CONTENT.preview) COURSE.modules.forEach(m => { if (m.folder && m.opens && m.opens > TODAY) { LOCKED[m.folder] = m.opens; m.lockedUntil = m.opens; delete m.folder; } });
+  if (!STAGE && !CONTENT.preview) COURSE.modules.forEach(m => { if (m.folder && m.opens && m.opens > TODAY) { LOCKED[m.folder] = m.opens; m.lockedUntil = m.opens; m.lockedFolder = m.folder; delete m.folder; } });
+  // A page left open over midnight opens the day's module without a reload: the date is checked each minute and
+  // whenever the page comes back into view (a phone's timers sleep). Only the home page and a locked module's
+  // address are redrawn, so nothing a student is in the middle of is disturbed.
+  function recheckDate() {
+    const t = today(new Date()); if (t === TODAY) return;
+    TODAY = t;
+    const opened = COURSE.modules.filter(m => m.lockedFolder && m.lockedUntil <= TODAY);
+    opened.forEach(m => { m.folder = m.lockedFolder; delete LOCKED[m.folder]; delete m.lockedUntil; delete m.lockedFolder; });
+    if (!opened.length) return;
+    const parts = decodeURIComponent(location.hash || '#/').replace(/^#\/?/, '').split('/').filter(Boolean);
+    if (!parts.length || (parts[0] === 'm' && opened.some(m => m.folder === parts[1]))) route();
+  }
+  if (Object.keys(LOCKED).length) { setInterval(recheckDate, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) recheckDate(); }); }
   const opensLabel = d => new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
   // ------------------------------------------------------------------ progress (distance, not a score)
@@ -156,7 +170,8 @@
   }
   // "Letterman 0.1.1 alpha": the number, and the stage as a word beside it (app/version.js)
   function versionLine() { const v = window.LETTERMAN_VERSION || {}; return v.version ? `Letterman ${v.version}${v.stage ? ' ' + v.stage : ''}` : 'Letterman'; }
-  function setTitle(t) { document.title = t ? `${t} · Letterman` : 'Letterman · Heirloom Estate Academy'; }
+  // the stage keeps one title, so a capture that matches the window by its title keeps finding it
+  function setTitle(t) { document.title = STAGE ? 'Letterman stage' : t ? `${t} · Letterman` : 'Letterman · Heirloom Estate Academy'; }
   function focusMain() { const h = $('#main h1, #main h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } window.scrollTo(0, 0); }
 
   // ------------------------------------------------------------------ THE ANCHOR (Charter law: every student screen says where you are)
@@ -904,7 +919,9 @@
       const sa = self && ms(model.id).answers[self.id];
       const incSelf = $('#hi-self') && $('#hi-self').checked && sa && sa.committed;
       if (name) { mem.name = name; persist(); }
+      const mentions = ((CFG.discord || {}).handinMentions || []).filter(m => /^<@&?\d{5,25}>$/.test(m));
       const text = [
+        mentions.length ? mentions.join(' ') : null,   // tells the teacher the thread is there, and adds them to it
         `Hand-in: ${COURSE.meta.title.split(':')[0]}, ${model.meta.module === 0 ? 'Week 0' : 'Module ' + model.meta.module}: ${model.meta.title}`,
         `From: ${name || 'a student'}`,
         `Work: (my video is attached)`,
@@ -931,7 +948,7 @@
             <p><a class="btn quiet" href="${esc(CFG.discord.channelUrl)}" target="_blank" rel="noopener">Open the hand-in channel<span class="sr-only"> (opens Discord in a new tab)</span></a></p></li>
           <li><p>Start a <b>private</b> thread: tap the threads icon (or <b>+</b>), choose <b>Create Thread</b>, and set it to <b>Private</b>. Name it:</p>
             <pre id="hs-thread">${esc(thread)}</pre><p><button class="btn quiet" type="button" data-copy="hs-thread">Copy the name</button></p></li>
-          <li><p>In your thread, attach your video and paste this message:</p>
+          <li><p>In your thread, attach your video and paste this message${mentions.length ? '. Keep its first line: it tells the teacher your thread is there' : ''}:</p>
             <pre id="hs-msg">${esc(text)}</pre><p><button class="btn quiet" type="button" data-copy="hs-msg">Copy the message</button></p></li>
           <li><p>Send it. Only you and the teacher can see a private thread.</p></li>
         </ol>
@@ -1072,6 +1089,68 @@
     if (!STAGE || e.key !== 'letterman:stage-goto' || !e.newValue) return;
     try { const d = JSON.parse(e.newValue); if (d && d.hash) go(d.hash); } catch (err) { }
   });
+  // Served by the teaching server (Teach.cmd, this computer only), the stage follows the server instead, so a stage
+  // the console never opened, such as OBS's browser source, follows too. The teacher's chart comes the same way:
+  // off, beside the lesson, or full stage, and a newer save of the file replaces the one showing.
+  const LOCAL = /^https?:$/.test(location.protocol) && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+  if (STAGE && LOCAL && window.EventSource) fetch('/api/stage', { cache: 'no-store' }).then(r => { if (r.ok) followServer(); }).catch(() => { });
+  function followServer() {
+    let charts = [], st = { chart: { mode: 'off', pick: null } }, box = null, want = '';
+    const es = new EventSource('/api/events');
+    es.addEventListener('stage', e => { st = JSON.parse(e.data) || st; if (st.hash && st.hash !== location.hash) go(st.hash); showChart(); setTimeout(applyScroll, 60); });
+    // The part of the step the class sees. A stage the teacher scrolls (the console's preview, or the pop-out) says
+    // where it is, by the step's own content rather than in pixels: which element sits at the top, and how far into
+    // it. Every other stage puts the same element at its top, so a stage of any size, OBS's included, shows the same
+    // part of the step. Only a scroll the teacher made is told; a stage that was moved does not answer back.
+    let userAt = 0, sendT = null;
+    const SEL = '#main :is(h1,h2,h3,h4,p,li,figure,img,svg,pre,table,blockquote,details,.prompt,.handin,.cta)';
+    const topLine = () => { const hb = $('.appbar'); return hb && /sticky|fixed/.test(getComputedStyle(hb).position) ? Math.max(0, hb.getBoundingClientRect().bottom) : 0; };
+    function where() {
+      if (window.scrollY < 4) return { i: -1, f: 0 };
+      const list = $$(SEL), top = topLine();
+      for (let i = 0; i < list.length; i++) { const r = list[i].getBoundingClientRect(); if (r.height > 0 && r.bottom > top + 1) return { i, f: Math.max(0, Math.min(1, (top - r.top) / r.height)) }; }
+      return { i: -1, f: 0 };
+    }
+    function applyScroll() {
+      const s = st.scroll;
+      if (!s || s.hash !== location.hash || Date.now() - userAt < 1500) return;
+      if (s.i < 0) return window.scrollTo(0, 0);
+      const list = $$(SEL); let i = s.i;
+      while (list[i] && !list[i].getBoundingClientRect().height) i++;   // hidden at this size: the next one
+      if (!list[i]) return;
+      const r = list[i].getBoundingClientRect();
+      window.scrollTo(0, window.scrollY + r.top + (i === s.i ? s.f * r.height : 0) - topLine());
+    }
+    ['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach(t => window.addEventListener(t, () => { userAt = Date.now(); }, { passive: true }));
+    window.addEventListener('scroll', () => {
+      if (Date.now() - userAt > 1000) return;
+      clearTimeout(sendT);
+      sendT = setTimeout(() => fetch('/api/stage', { method: 'POST', headers: { 'content-type': 'application/json', 'x-letterman': '1' }, body: JSON.stringify({ scroll: Object.assign({ hash: location.hash }, where()) }) }).catch(() => { }), 120);
+    }, { passive: true });
+    window.addEventListener('hashchange', () => setTimeout(applyScroll, 60));
+    document.addEventListener('load', e => { if (e.target.tagName === 'IMG') applyScroll(); }, true);   // a picture that loads late moves what is below it
+    // the console's buttons scroll its preview through here, as the teacher's own scroll
+    window.LMStage = { scroll(dir) { userAt = Date.now(); window.scrollBy(0, Math.round(dir * (window.innerHeight - topLine()) * 0.75)); } };
+    es.addEventListener('charts', e => { charts = JSON.parse(e.data) || []; showChart(); });
+    function showChart() {
+      const mode = (st.chart || {}).mode || 'off';
+      const f = mode !== 'off' && (charts.find(c => c.name === st.chart.pick) || charts[0]);
+      document.body.classList.toggle('chart-full', !!f && mode === 'full');
+      document.body.classList.toggle('chart-beside', !!f && mode === 'beside');
+      if (!f) { if (box) box.hidden = true; return; }
+      if (!box) { box = document.createElement('figure'); box.className = 'stagechart'; box.innerHTML = '<img alt="">'; document.body.appendChild(box); }
+      box.hidden = false;
+      const img = box.querySelector('img');
+      img.alt = st.label || '';
+      const src = `/chart/${encodeURIComponent(f.name)}?v=${f.mtime}-${f.size}`;
+      if (src === want) return;
+      // the new copy is loaded before it replaces the old one, so the stage never shows a blank or half a file
+      want = src;
+      const next = new Image();
+      next.onload = () => { if (want === src) { img.src = src; box.dataset.chart = f.name; } };
+      next.src = src;
+    }
+  }
 
   // ------------------------------------------------------------------ offline (only where a service worker can run)
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !STAGE) {

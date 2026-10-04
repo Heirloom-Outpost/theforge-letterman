@@ -2,4 +2,4 @@
 // 0.y.z stays below 1.0.0 until the stable public release; y moves on entering alpha and on each package
 // for the trusted testers; z counts completed turns inside the stage. The build reads this file, the page
 // and the console show it, and the offline cache is named after it.
-self.LETTERMAN_VERSION = { version: '0.1.1', stage: 'alpha' };
+self.LETTERMAN_VERSION = { version: '0.1.2', stage: 'alpha' };

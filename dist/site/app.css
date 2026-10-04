@@ -293,10 +293,22 @@ figcaption .kind { display: inline-block; font-weight: 700; color: var(--ink-2);
 @media (min-width: 1100px) { .consent { bottom: 1rem; left: auto; right: 1rem; } }
 
 /* stage (teacher's shared screen) */
-body.stage { font-size: 20px; }
+/* OBS's browser source makes body's background transparent by its own default CSS; the stage owns its background */
+body.stage { font-size: 20px; background: var(--paper); }
 body.stage .livechip { display: inline-flex; }
 .livechip { display: none; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: #B3261E; color: #fff; border-radius: 6px; padding: 3px 8px; }
 body.stage .consent { display: none !important; }
+/* the teacher's chart on the stage (teaching server only): full stage, or beside the lesson */
+.stagechart { display: none; margin: 0; }
+.stagechart[hidden] { display: none !important; }
+body.chart-full .stagechart, body.chart-beside .stagechart { display: flex; position: fixed; z-index: 60; align-items: center; justify-content: center; background: var(--paper); }
+body.chart-full { overflow: hidden; }
+body.chart-full .stagechart { inset: 0; padding: 1.5vh 1.5vw; }
+body.chart-beside .stagechart { top: 0; right: 0; bottom: 0; width: 46vw; padding: 1rem; border-left: 2px solid var(--line-2); }
+.stagechart img { max-width: 100%; max-height: 100%; object-fit: contain; background: #fff; border-radius: 6px; }
+body.chart-beside #app { margin-right: 46vw; }
+body.chart-beside .guidepane { display: none !important; }
+body.chart-beside .stepgrid { grid-template-columns: minmax(0, 1fr) !important; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
