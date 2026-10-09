@@ -282,13 +282,13 @@
       document.getElementById('co-again').onclick = () => sendCode(email, msg);
       document.getElementById('co-form').onsubmit = async e => {
         e.preventDefault();
-        const token = document.getElementById('co-code').value.replace(/\s+/g, '');
-        if (!token) { msg(WORDS.mismatch); return; }
+        const entered = document.getElementById('co-code').value.replace(/\s+/g, '');
+        if (!entered) { msg(WORDS.mismatch); return; }
         // The service answers a wrong code and an old one the same way; the page knows when it sent the code.
         const old = Date.now() - sentAt > codeMs;
         try {
           const c = await getClient();
-          const { data, error } = await c.auth.verifyOtp({ email, token, type: 'email' });
+          const { data, error } = await c.auth.verifyOtp({ email, token: entered, type: 'email' });
           if (error || !data || !data.session) {
             if (error && trouble(error)) { msg(WORDS.failed); return; }
             msg(old ? WORDS.expired : WORDS.mismatch); return;

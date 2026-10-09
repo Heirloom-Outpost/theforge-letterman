@@ -1,12 +1,12 @@
 # TheForge\Letterman: MANIFEST (GENERATED, do not edit)
 
-**Built:** 2026-10-09 14:19 by Governance\Outpost-Build.ps1 from `Governance\Outpost\TheForge_Letterman.manifest.md`. The main tier only: what may be pushed. Hashes abbreviated to sixteen characters here; the full hash is in the app package and the register.
+**Built:** 2026-10-09 14:24 by Governance\Outpost-Build.ps1 from `Governance\Outpost\TheForge_Letterman.manifest.md`. The main tier only: what may be pushed. Hashes abbreviated to sixteen characters here; the full hash is in the app package and the register.
 **Seat:** Letterman. **The estate on J: is the record; every file here is a byte-identical copy of its source as of its copy date, and where the two disagree the estate wins.** Read every file here before answering anything, and never answer from memory or summary while these files are present; say the date behind every claim.
 
 | file | what it is, and why it travels | tier | source | source date | copied | sha-256 |
 |---|---|---|---|---|---|---|
 | .github\workflows\pages.yml | Publishes dist\site\ to the public address whenever main changes (GitHub Pages) | main | Governance\Outpost\static\TheForge_Letterman\pages.yml | 2026-10-02 | 2026-10-09 | 6a1f402183a45df1 |
-| dist\site\account.js | The page's own code and look, built in TheForge\Letterman (0.2.0, commit a403e2f) | main | TheForge\Off-Repo Storage\Letterman\Packages\2026-10-09_0.2.0\site\account.js | 2026-10-09 | 2026-10-09 | 09b03e64fa4afb81 |
+| dist\site\account.js | The page's own code and look, built in TheForge\Letterman (0.2.0, commit a403e2f) | main | TheForge\Off-Repo Storage\Letterman\Packages\2026-10-09_0.2.0\site\account.js | 2026-10-09 | 2026-10-09 | c45c39f03b1960a4 |
 | dist\site\app.css | The page's own code and look, built in TheForge\Letterman (0.2.0, commit a403e2f) | main | TheForge\Off-Repo Storage\Letterman\Packages\2026-10-09_0.2.0\site\app.css | 2026-10-09 | 2026-10-09 | 133c1cae6c2eef9e |
 | dist\site\app.js | The page's own code and look, built in TheForge\Letterman (0.2.0, commit a403e2f) | main | TheForge\Off-Repo Storage\Letterman\Packages\2026-10-09_0.2.0\site\app.js | 2026-10-09 | 2026-10-09 | 68ffdeaf6ee4d4e2 |
 | dist\site\build.json | The build's own record: version, date, short commit, the content it was built from (short fingerprints only) | main | TheForge\Off-Repo Storage\Letterman\Packages\2026-10-09_0.2.0\site\build.json | 2026-10-09 | 2026-10-09 | f9b72dfaff65f24a |

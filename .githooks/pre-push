@@ -9,7 +9,7 @@
 fail=0
 report() { echo "PRE-PUSH REFUSED: $1"; fail=1; }
 
-scan() { git grep -nIE "$1" -- . ':(exclude).githooks/*' 2>/dev/null; }
+scan() { git grep -nIE "$1" -- . ':(exclude).githooks/*' ':(exclude)dist/site/vendor/*' 2>/dev/null; }   # vendor/: third-party libraries shipped as published (the Director, 2026-10-09)
 
 check() {
   hits=$(scan "$2")
