@@ -1,0 +1,40 @@
+/* The hand-in inside the portal, the reply on the student's page, and the class's conversation (M2-23).
+   Colours only from the tokens block at the top of app.css (tools/tokens.mjs checks this file too); fields, cards and
+   buttons are app.css's own, so these pieces look like the rest of The Press. */
+
+/* the sheet: the same fields as the prompts' */
+.hi-svc textarea, .hi-svc input[type=url], .talk-form textarea {
+  width: 100%; padding: .75rem .875rem; font: 1.06rem/1.5 var(--sans); color: var(--ink); background: var(--leaf);
+  border: 1.5px solid var(--ctl); border-radius: 8px; }
+.hi-svc textarea, .talk-form textarea { min-height: 7rem; resize: vertical; }
+.hi-svc input[type=url] { min-height: 3rem; }
+.hi-svc textarea:focus, .hi-svc input[type=url]:focus, .talk-form textarea:focus { border-color: var(--accent); }
+.hi-svc .handin-as { margin: .875rem 0; }
+.hi-mine { margin-top: .875rem; }
+.hi-mine summary { cursor: pointer; color: var(--accent); min-height: 2.5rem; display: flex; align-items: center; }
+.hi-list { margin: .4rem 0 0; }
+.hi-list li { margin-bottom: .875rem; }
+.hi-list a, .talk-files a { overflow-wrap: anywhere; }
+.hi-body, .fb-msg, .talk-text { white-space: pre-line; overflow-wrap: anywhere; }
+
+/* a time, and the student's own time beside it */
+.when-local { color: var(--ink-3); }
+
+/* the count in the running head: whole, never cut in half. While a class is live, the Live button needs its place: the
+   count folds away from sight there (it stays in the head's spoken words, and on the week card), so the account button
+   and the theme stay on the screen (tools/live.mjs, head-intact) */
+.hi-count { white-space: nowrap; }
+.head:has(.live-bar:not([hidden])) .tally .hi-count { display: none; }
+
+/* the conversation */
+.talk .btnrow { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0 1rem; }
+.talk-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .625rem; }
+.talk-msg { background: var(--leaf); border: 1px solid var(--rule); border-radius: 8px; padding: .75rem 1rem; margin: 0; }
+.talk-who { margin: 0 0 .3rem; font: .92rem/1.4 var(--sans); display: flex; flex-wrap: wrap; gap: .2rem .5rem; align-items: baseline; }
+.talk-when { color: var(--ink-3); font-size: .86rem; }
+.talk-via { font-size: .72rem; border: 1px solid var(--rule-2); border-radius: 99px; padding: 1px 8px; color: var(--ink-2); white-space: nowrap; }
+.talk-text { margin: 0; }
+.talk-files { margin: .4rem 0 0; font-size: .92rem; }
+.talk-compose { margin-top: 1rem; }
+.talk-del { margin: .2rem 0 0; }
+.talkcard .btnrow { display: flex; flex-wrap: wrap; gap: .5rem; }

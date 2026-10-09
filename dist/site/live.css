@@ -1,0 +1,38 @@
+/* The live room on the student's page (M2-22): the Live button in the running head, the first choice on the week card,
+   and the line on a step while the student follows the class. Every colour is a token from app.css's tokens block
+   (tools/tokens.mjs checks this file too): the Live chip is the stage's own (--live-bg, --live-ink), the star is gold.
+   Never on the stage: live.js does not run there. */
+.live-bar { display: inline-flex; flex: none; align-items: center; }
+.live-bar[hidden] { display: none; }
+.live-go, .live-on { display: inline-flex; align-items: center; gap: .4rem; min-height: 40px; padding: .3rem .75rem; border-radius: 99px;
+  font: 700 .78rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.live-go { background: var(--live-bg); color: var(--live-ink); text-decoration: none; }
+.live-go:hover { background: color-mix(in srgb, var(--live-bg) 88%, var(--ink)); }
+.live-go:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.live-on { background: var(--tint); color: var(--ink); border: 1px solid var(--line-2); }
+.live-dot { width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; flex: none; }
+.live-on .live-dot { background: var(--live-bg); }
+@media (prefers-reduced-motion: no-preference) { .live-dot { animation: live-pulse 2s ease-in-out infinite; } }
+@keyframes live-pulse { 50% { opacity: .45; } }
+/* the running head is full (the spine, the whereabouts, the tally, the account): the chip says only Live, and the step is
+   in its spoken name and on the step page. At phone width it narrows further. */
+.live-bar .live-n { display: none; }
+@media (max-width: 420px) { .live-go, .live-on { padding: .3rem .6rem; } }
+.live-gold { display: inline-flex; align-items: center; margin-left: .15rem; }
+.live-gold svg { width: 18px; height: 18px; }
+.live-gold path { fill: var(--gold); }
+.live-go .live-gold path { stroke: var(--live-ink); stroke-width: 1.2; }
+
+.live-week { display: grid; gap: .35rem; margin: 0 0 .6rem; }
+.live-week .btn { width: 100%; }
+.live-who { margin: 0; color: var(--ink-2); font-size: .9rem; }
+
+.live-step { margin: 0 0 1rem; padding: .7rem .9rem; border: 1px solid var(--line-2); border-left: 4px solid var(--live-bg); border-radius: var(--r);
+  background: var(--card); color: var(--ink); }
+.live-step:empty { margin: 0; padding: 0; border: 0; }
+.live-step p { margin: 0 0 .4rem; }
+.live-step .btn { margin-left: .3rem; }
+.live-step .linkish { padding-left: 0; }
+.live-star { display: flex; align-items: center; gap: .45rem; background: var(--gold-bg); color: var(--ink); border-radius: 99px;
+  padding: .3rem .8rem .3rem .45rem; font-weight: 600; width: fit-content; }
+.live-star path { fill: var(--gold); }

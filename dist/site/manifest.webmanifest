@@ -1,10 +1,42 @@
 {
-  "name": "Letterman · Heirloom Estate Academy",
+  "name": "Letterman",
+  "description": "Eight weeks of the foundations of 2D animation, drawn by hand in Blender's Grease Pencil, with an optional Toon Boom Harmony track. One module a week moves from a bouncing ball through drawing and timing, cycles, character and pose, sound and voice, and scene craft, to a final piece of 30 to 60 seconds that each student animates and voices. There are no grades and no tests to pass, and AI organizes the course and touches nothing a student makes.",
   "short_name": "Letterman",
   "start_url": "./#/",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F6F2E9",
-  "theme_color": "#F6F2E9",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "background_color": "#E6DFD2",
+  "theme_color": "#E6DFD2",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

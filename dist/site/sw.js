@@ -12,6 +12,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
+  // Letterman's service (M2-20) is never cached: its answers belong to one account, and an old one must not stand
+  // in for the service. Every request to it carries the apikey header; the paths are Supabase's own.
+  if (e.request.headers.has('apikey') || e.request.headers.has('authorization') || /^\/(auth|rest|realtime|storage|functions)\/v1\//.test(url.pathname)) return;
   if (url.origin !== location.origin) {
     // credited works on Wikimedia Commons: cache what was seen, so a figure survives a train tunnel
     e.respondWith(caches.open(CACHE).then(c => fetch(e.request).then(r => { if (r.ok || r.type === 'opaque') c.put(e.request, r.clone()); return r; }).catch(() => c.match(e.request))));

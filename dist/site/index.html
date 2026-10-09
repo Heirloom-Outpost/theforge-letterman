@@ -3,23 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Letterman · Heirloom Estate Academy</title>
-<meta name="description" content="Animation 101: a free eight-week course in 2D animation. You try first, then you read. No account, no grades.">
-<meta name="theme-color" content="#F6F2E9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15120E" media="(prefers-color-scheme: dark)">
+<title>Letterman</title>
+<meta name="description" content="Eight weeks of the foundations of 2D animation, drawn by hand in Blender's Grease Pencil, with an optional Toon Boom Harmony track. One module a week moves from a bouncing ball through drawing and timing, cycles, character and pose, sound and voice, and scene craft, to a final piece of 30 to 60 seconds that each student animates and voices. There are no grades and no tests to pass, and AI organizes the course and touches nothing a student makes.">
+<meta name="theme-color" content="">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preload" href="fonts/newsreader-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="live.css">
+<link rel="stylesheet" href="enrol.css">
+<link rel="stylesheet" href="handin.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to the lesson</a>
-<div id="app" aria-live="off"><noscript><p style="padding:1rem">Letterman needs JavaScript to run the interactive prompts. The lesson text is plain Markdown in the <code>content</code> folder.</p></noscript></div>
+<a class="skip" href="#main">Skip to the page</a>
+<!-- the marbling of the course's own cover art, as B drew it (decorative; its colours are the page's tokens) -->
+<svg class="defs" aria-hidden="true" focusable="false" width="0" height="0"><defs>
+  <filter id="lm-marble" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.0045 0.016" numOctaves="2" seed="11" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="95" xChannelSelector="R" yChannelSelector="G"/>
+  </filter></defs></svg>
+<div id="lm-status" class="sr-only" role="status" aria-live="polite"></div>
+<div id="app"><noscript><p class="noscript">Letterman needs JavaScript to run the interactive prompts. The lesson text is plain Markdown in the <code>content</code> folder.</p></noscript></div>
 <script src="version.js"></script>
 <script src="letterman.config.js"></script>
 <script src="data/course.js"></script>
 <script src="md.js"></script>
 <script src="model.js"></script>
+<script src="account.js"></script>
+<script src="live.js"></script>
+<script src="enrol.js"></script>
+<script src="when.js"></script>
+<script src="handin.js"></script>
+<script src="discuss.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

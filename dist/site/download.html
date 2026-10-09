@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Get Letterman for Windows · Heirloom Estate Academy</title>
+<meta name="description" content="The free learning portal of Heirloom Estate Academy, as a Windows app. Or use Letterman in your browser, with no download.">
+<meta name="theme-color" content="">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<script src="look.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the download</a>
+<div class="dl">
+<header class="dl-mast" role="banner">
+  <div class="endpaper" aria-hidden="true" id="ep"></div>
+  <div class="dl-in">
+    <div class="dl-top">
+      <div class="brand" aria-hidden="true"><img src="icon.svg" alt="" width="38" height="38"><span><b>Letterman</b><small>Heirloom Estate Academy</small></span></div>
+      <a class="btn quiet small dl-back" href="./"><span aria-hidden="true">←</span> Back<span class="bk-long"> to Letterman</span></a>
+    </div>
+    <div class="dl-hero">
+      <img src="icon.svg" alt="The Letterman icon: a serif L with a red ribbon bookmark" width="132" height="132">
+      <div>
+        <p class="by">From Heirloom Estate Academy</p>
+        <h1>Get Letterman for Windows</h1>
+        <p class="dek">The free learning portal of Heirloom Estate Academy. Made by Heirloom Estate Academy.</p>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="dl-main">
+  <section class="card getbox" aria-labelledby="get-h">
+    <h2 id="get-h">Download</h2>
+    <div id="get">
+      <p><a class="btn primary" href="./" id="browser-primary">Use Letterman in your browser</a></p>
+    </div>
+    <p id="browser-or" hidden>Or use Letterman <a href="./">in your browser</a>. No download.</p>
+  </section>
+
+  <section class="warn" aria-labelledby="warn-h" id="install">
+    <h2 id="warn-h">Windows will warn you. Here are the clicks.</h2>
+    <p>Letterman is free, and this first version is not signed with a paid certificate. Windows, and sometimes your browser, warns about any new file like that. The warning is about the file being new. It is not a finding that anything is wrong.</p>
+    <p class="small muted">What Windows says:</p>
+    <p class="says" role="note">Windows protected your PC. Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.</p>
+    <ol class="steps">
+      <li><b>Keep.</b> Your browser may ask whether to keep the file. Choose <b>Keep</b>.</li>
+      <li><b>More info.</b> Open the file. If Windows shows the warning above, click <b>More info</b>.</li>
+      <li><b>Check the file name, then Run anyway.</b> Under More info, the app name should read <b>Letterman-Setup.exe</b>. If it does, click <b>Run anyway</b>.</li>
+      <li><b>It installs and opens.</b> Letterman installs in a few seconds and opens by itself. After that you will find it in the Start menu.</li>
+    </ol>
+    <p class="safety"><b>If the name is different, do not run it.</b> Anything other than Letterman-Setup.exe is not from this page. Close the window and download again from here.</p>
+    <p class="safety"><b>If there is no Run anyway button,</b> your PC is using Smart App Control, which only allows signed apps. Use Letterman in your browser instead, and do not turn Smart App Control off.</p>
+  </section>
+
+  <details class="adv">
+    <summary>For advanced users</summary>
+    <div>
+      <p>Letterman installs for you only. It needs no administrator rights. It updates itself quietly from the public repository's releases, and it never restarts without asking you.</p>
+      <h3>Fingerprints (SHA-256)</h3>
+      <div id="fps"><p class="muted">Each release lists its fingerprints here.</p></div>
+      <p class="small muted">To check a download, run <code>Get-FileHash .\Letterman-Setup.exe</code> in PowerShell and compare the result. The spaces above are only for reading; ignore them when you compare.</p>
+      <h3>Release notes</h3>
+      <p><a id="notes" href="https://github.com/Heirloom-Outpost/theforge-letterman/releases">What changed in each version</a></p>
+      <h3>To uninstall</h3>
+      <p>Open Windows Settings, then Apps, then Installed apps. Find Letterman and choose Uninstall. Your answers are kept in Letterman's own data folder until you erase them in the app, under Your data.</p>
+    </div>
+  </details>
+  <p><a class="btn quiet" href="./">Back to Letterman</a></p>
+</main>
+</div>
+<script src="release.js"></script>
+<script>
+(function () {
+  // the library shelf: cloth spines with gilt bands on an oak edge (the same endpaper as the course title page);
+  // decorative, and its colours are the page's tokens (--e*)
+  var cloth = ['var(--e1)', 'var(--e5)', 'var(--e2)', 'var(--e1)', 'var(--e4)', 'var(--e3)', 'var(--e1)', 'var(--e6)', 'var(--e5)', 'var(--e7)', 'var(--e2)', 'var(--e3)'];
+  var SW = [30, 38, 26, 34, 44, 28, 32, 24, 36], seed = 1, x = -8, k = 0, b = '';
+  while (x < 1210) {
+    var w = SW[(k * 4 + seed) % SW.length], top = 12 + ((k * 7 + seed * 3) % 5) * 7, c = cloth[(k * 5 + seed) % cloth.length], iw = w - 3;
+    b += '<rect x="' + x + '" y="' + top + '" width="' + iw + '" height="' + (150 - top) + '" fill="' + c + '"/>';
+    b += '<rect x="' + x + '" y="' + (top + 9) + '" width="' + iw + '" height="2" fill="var(--e-gilt)"/><rect x="' + x + '" y="' + (top + 14) + '" width="' + iw + '" height="1" fill="var(--e-gilt)"/>';
+    if ((k + seed) % 3 === 0) b += '<rect x="' + (x + 5) + '" y="' + (top + 28) + '" width="' + (iw - 10) + '" height="24" rx="1" fill="var(--e-label)" opacity=".9"/>';
+    b += '<rect x="' + x + '" y="130" width="' + iw + '" height="1" fill="var(--e-gilt)"/><rect x="' + x + '" y="134" width="' + iw + '" height="2" fill="var(--e-gilt)"/>';
+    x += w; k++;
+  }
+  document.getElementById('ep').innerHTML = '<svg class="marble shelf" viewBox="0 0 1200 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><rect width="1200" height="160" fill="var(--e0)"/>' + b + '<rect y="150" width="1200" height="10" fill="var(--e-shelf)"/><rect y="150" width="1200" height="1.5" fill="var(--e-gilt)" opacity=".55"/></svg>';
+  var R = window.LETTERMAN_RELEASE || { released: false };
+  var ua = navigator.userAgent || '';
+  var phone = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  var windows = /Windows NT/i.test(ua) && !phone;
+  var get = document.getElementById('get'), or = document.getElementById('browser-or');
+  var mb = function (b) { return b >= 1048576 ? Math.round(b / 1048576) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  if (window.LettermanDesktop) {
+    // opened from Help, Install guide inside the app: nothing to download here
+    get.innerHTML = '<p>You are already using the Letterman app. These are the steps for putting it on another Windows computer.</p><p><a class="btn primary" href="./">Back to Letterman</a></p>';
+  } else if (!windows) {
+    // a phone, a Mac or a tablet: the browser first; the Windows file second, said plainly to be for a Windows computer
+    get.innerHTML = '<p>The Letterman app is for Windows computers. On a Mac, a phone or a tablet, use Letterman in your browser. It is the same portal.</p><p><a class="btn primary" href="./">Use Letterman in your browser</a></p>' +
+      (R.released ? '<p class="small">For a Windows computer: <a href="' + esc(R.url) + '">download Letterman ' + esc(R.version) + (R.stage ? ' ' + esc(R.stage) : '') + '</a> (' + mb(R.bytes) + ').</p>' : '');
+  } else if (!R.released) {
+    get.innerHTML = '<p>The Windows app is not released yet.</p><p><a class="btn primary" href="./">Use Letterman in your browser</a></p>';
+  } else {
+    var label = 'Letterman ' + esc(R.version) + (R.stage ? ' ' + esc(R.stage) : '');
+    get.innerHTML = '<p><a class="btn primary stack" href="' + esc(R.url) + '"><span>Download ' + label + ' for Windows</span><small class="sub">' + mb(R.bytes) + ' · ' + esc(R.file) + '</small></a></p>';
+    or.hidden = false;
+  }
+  if (R.released && R.sha256) {
+    var rows = Object.keys(R.sha256).map(function (f) { return '<tr><th scope="row">' + esc(f) + '</th><td class="fp">' + esc(R.sha256[f]) + '</td></tr>'; }).join('');
+    document.getElementById('fps').innerHTML = '<div class="table-wrap"><table><thead><tr><th scope="col">File</th><th scope="col">SHA-256</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  if (R.released && R.notesUrl) document.getElementById('notes').href = R.notesUrl;
+  if (location.hash === '#install') document.getElementById('install').scrollIntoView();
+})();
+</script>
+</body>
+</html>

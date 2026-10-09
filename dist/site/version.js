@@ -1,5 +1,5 @@
-// Letterman's version: the one place it is written. The family version rule (project standard, slot 8):
-// 0.y.z stays below 1.0.0 until the stable public release; y moves on entering alpha and on each package
-// for the trusted testers; z counts completed turns inside the stage. The build reads this file, the page
-// and the console show it, and the offline cache is named after it.
-self.LETTERMAN_VERSION = { version: '0.1.2', stage: 'alpha' };
+// Letterman's version: the one place it is written. Semantic Versioning 2.0.0 (the family rule, root board RB-47,
+// from M2's close): 0.y.z stays below 1.0.0 until the stable public release; the stage (alpha, beta) is shown as a
+// word beside the number. The build reads this file, the page and the console show it, and the offline cache is
+// named after it.
+self.LETTERMAN_VERSION = { version: '0.2.0', stage: 'alpha' };

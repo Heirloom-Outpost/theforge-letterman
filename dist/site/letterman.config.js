@@ -1,22 +1,20 @@
-// The app's own settings: where hand-ins go and where the site lives. Content never carries these
-// (Course Package Standard r2, §1: "no submission paths... Those belong to the app").
-// Discord channels made by the Academy on the Director's confirmation, 2026-10-02: one hand-in channel for
-// every class, where each student starts a private thread; one discussion channel per class.
+// The app's own settings, plain defaults only. Content never carries these (Course Package Standard r2, §1: "no
+// submission paths... Those belong to the app"), and the app names no course, server or channel: this deployment's
+// Discord server, channels and public address live in letterman.deployment.json at the root of the repository, and
+// tools/build.mjs adds them to the copy of this file that the page loads (board row M2-27). A person's own ids go in
+// letterman.local.json (never saved in the repository): the build adds them too.
 window.LETTERMAN_CONFIG = {
   prototype: false,                       // true mocks the Discord hand-off as "(prototype) would send"
-  siteUrl: 'https://heirloom-outpost.github.io/theforge-letterman/',   // the public address, on the Director's word (estate path naming)
+  siteUrl: '',                            // the public address: from the deployment file
   discord: {
-    server: "Hopper's Hangout",
-    handinChannel: '#academy-hand-ins',
-    channelUrl: 'https://discord.com/channels/953682198190497794/1555713768250671177',
-    // Who is told of a new hand-in: Discord mentions put at the top of the message the student pastes, such as
-    // '<@user id>' or '<@&role id>'. Mentioning someone in a private thread adds them to it and notifies them.
-    // A person's own ids go in letterman.local.json at the root of this repository (never saved in the
-    // repository): the build adds them to the page it writes. Only <@id> and <@&id> are kept.
-    handinMentions: ['<@&1555713717306663064>'],   // the server's Teacher role (the Director's pass, 2026-10-04): whoever teaches is told
-    discussChannel: '#animation-101',     // the class's own channel; per course below
-    discuss: {
-      Animation_101: { channel: '#animation-101', url: 'https://discord.com/channels/953682198190497794/1555713771798929538' }
-    }
+    server: 'Discord',
+    handinChannel: '',
+    channelUrl: '',
+    handinMentions: [],                   // Discord mentions put at the top of the message the student pastes: '<@user id>' or '<@&role id>'
+    discussChannel: '',                   // the channel for a class with no entry in discuss
+    discuss: {}                           // per course folder name: { channel, url }
   }
 };
+
+// added by the build from letterman.deployment.json
+(function (c, s) { if (s.siteUrl) c.siteUrl = s.siteUrl; Object.keys(s.discord).forEach(function (k) { c.discord[k] = s.discord[k]; }); })(window.LETTERMAN_CONFIG, {"siteUrl":"https://heirloom-outpost.github.io/theforge-letterman/","discord":{"server":"Hopper's Hangout","handinChannel":"#academy-hand-ins","channelUrl":"https://discord.com/channels/953682198190497794/1555713768250671177","handinMentions":["<@&1555713717306663064>"],"discuss":{"Animation_101":{"channel":"#animation-101","url":"https://discord.com/channels/953682198190497794/1555713771798929538","posts":{}}}}});

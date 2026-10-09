@@ -7,6 +7,11 @@
   const courseKey = Object.keys(CONTENT.courses)[0];
   const COURSE = CONTENT.courses[courseKey];
   const MODELS = {};
+  // The language of the page comes from the course (standard section 3: meta.language, a BCP 47 tag); a module may say its own.
+  // A value that is not a tag is ignored. 'en' is used only when the course says nothing.
+  const okLang = c => (typeof c === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/.test(c.trim())) ? c.trim() : null;
+  const courseLang = okLang(COURSE.meta && COURSE.meta.language) || 'en';
+  if (typeof document !== 'undefined' && document.documentElement) document.documentElement.lang = courseLang;   // the student page and the console both load this
 
   function inheritPrompt(p, byId) {
     if (!p.repeat_of || !byId[p.repeat_of]) return p;
@@ -70,7 +75,7 @@
     const prompts = {};
     Object.keys(byId).forEach(id => { prompts[id] = inheritPrompt(byId[id], byId); });
     const assets = {};
-    (COURSE.assets || []).forEach(a => { assets[a.id] = a; });   // course-level links (standard §3a); the module's own win
+    (COURSE.assets || []).forEach(a => { assets[a.id] = Object.assign({}, a, { course: true }); });   // course.course: its files sit beside the course, not in a module's folder (set here, never published)   // course-level links (standard §3a); the module's own win
     (mj.assets || []).forEach(a => { assets[a.id] = a; });
     const blocks = (mj.student || []).map(b => Object.assign({}, b, { file: slash(b.file), md: pkg.files[slash(b.file)] || '' }));
     const steps = [];
@@ -86,7 +91,7 @@
     const explained = new Set(Object.values(prompts).filter(p => !p.repeat_of && p.explains_with).map(p => p.explains_with));
     const microscopes = {};
     (mj.microscopes || []).forEach(x => { microscopes[x.id] = Object.assign({}, x, { md: pkg.files[slash(x.file || '')] || '' }); });
-    const model = { folder, mj, meta: mj.meta, id: mj.meta.id, prompts, assets, microscopes, blocks, steps, explained, guide: parseGuide(pkg.files[slash(mj.guide).replace(/^.*?(guide\/)/, '$1')] || pkg.files['guide/guide.md'] || '') };
+    const model = { folder, mj, meta: mj.meta, id: mj.meta.id, lang: okLang(mj.meta.language) || courseLang, prompts, assets, microscopes, blocks, steps, explained, guide: parseGuide(pkg.files[slash(mj.guide).replace(/^.*?(guide\/)/, '$1')] || pkg.files['guide/guide.md'] || '') };
     mapGuide(model);
     MODELS[folder] = model;
     return model;
@@ -158,6 +163,33 @@
   const glossary = {};
   (COURSE.glossary || []).forEach(t => { glossary[t.id] = t; });
 
-  return { courseKey, COURSE, glossary, buildModel, slash };
+  // ------------------------------------------------------------------ how the course measures learning (M2-31)
+  // The course names its measures (meta.measures, checked by the build); a module's own list replaces the course's for
+  // that module. Nothing named, nothing here: every function below answers with nothing.
+  const courseMeasures = ((COURSE.meta || {}).measures || []).slice();
+  function measuresOf(folder) {
+    const p = COURSE.packages[folder], own = p && p.module.meta && p.module.meta.measures;
+    return Array.isArray(own) ? own : courseMeasures.filter(m => m.per !== 'course');
+  }
+  // A value, checked against the measure's scale before it is kept anywhere: one of its levels, a number in its range
+  // on its step, or a short line of text. The service keeps the text it is given; this is where the scale is held to.
+  function checkValue(m, raw) {
+    const s = (m && m.scale) || {}, v = String(raw == null ? '' : raw).trim();
+    if (!v || v.length > 200 || /[\u0000-\u001f\u007f]/.test(v)) return { ok: false };
+    if (s.levels) return s.levels.includes(v) ? { ok: true, value: v } : { ok: false };
+    if (s.text) return { ok: true, value: v };
+    if (Number.isFinite(s.min) && Number.isFinite(s.max)) {
+      const n = Number(v), k = (n - s.min) / (s.step || 1);
+      return Number.isFinite(n) && n >= s.min && n <= s.max && Math.abs(k - Math.round(k)) < 1e-9 ? { ok: true, value: String(n) } : { ok: false };
+    }
+    return { ok: false };
+  }
+  // the value in words: a level or a line as it is; a number out of its range ("7 of 10 points")
+  function valueWords(m, v) {
+    const s = (m && m.scale) || {};
+    return Number.isFinite(s.max) && !s.levels ? `${v} of ${s.max}${s.unit ? ' ' + s.unit : ''}` : String(v);
+  }
+
+  return { courseKey, COURSE, glossary, buildModel, slash, courseMeasures, measuresOf, checkValue, valueWords, okLang, courseLang };
   } };
 })();
