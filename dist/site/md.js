@@ -7,7 +7,7 @@
 //     http, https or mailto, or has no scheme; javascript:, data: and the like are left as plain words.
 //   - Named character references ("&copy;") use the browser's own table when there is a page, and a short built-in table
 //     otherwise; a number reference ("&#169;") always works.
-// Kept from the earlier reader because real content uses them, though the standard does not name them: a bare http(s)
+// Also read, because real content uses them though the standard does not name them: a bare http(s)
 // address in the text becomes a link, and "- [ ]" / "- [x]" list items show a box.
 //
 // The Academy's conventions, as literal text, never a template language (standard section 4):

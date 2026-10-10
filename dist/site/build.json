@@ -1,9 +1,9 @@
 {
   "app": "Letterman",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "stage": "alpha",
-  "built": "2026-10-09T19:16:36.150Z",
-  "commit": "8cdb0a7c7ab6",
+  "built": "2026-10-10T00:14:32.505Z",
+  "commit": "bbb3257ec5dc",
   "uncommitted_changes": false,
   "preview": false,
   "content": [

@@ -1,8 +1,8 @@
 // Letterman's content model: shared by the student portal and the teaching console ("one renderer, two targets").
-// Reads a package-v1 module as written (r2), including its quirks. Knows no module by name.
+// Reads a package-v1 module as written, including its quirks. Knows no module by name.
 (function () {
   'use strict';
-  const slash = p => String(p || '').replace(/\\/g, '/');   // r2 quirk: backslash paths
+  const slash = p => String(p || '').replace(/\\/g, '/');   // a package may write its paths with backslashes
   window.LMModel = { create(CONTENT) {
   const courseKey = Object.keys(CONTENT.courses)[0];
   const COURSE = CONTENT.courses[courseKey];
@@ -17,7 +17,7 @@
     if (!p.repeat_of || !byId[p.repeat_of]) return p;
     const base = byId[p.repeat_of];
     const eff = Object.assign({}, base, p);
-    // r2 quirk: "answer": "same as p1" means inherit. r3 makes inheritance the rule.
+    // "answer": "same as p1" also means inherit
     if (typeof p.answer === 'string' && /^same as\b/i.test(p.answer)) eff.answer = base.answer;
     eff.units = Object.assign({}, base.units || {}, p.units || {});
     eff.explains_with = p.explains_with || base.explains_with;
@@ -49,7 +49,7 @@
       for (const part of parts) {
         const has = /^\{\{prompt:/.test(part);
         if (!has) { lead += part; continue; }
-        out.push({ h2: k === 0 ? s.h2 : s.h2, md: (k === 0 ? lead : '') + part, pids: [part.match(/^\{\{prompt:([\w-]+)\}\}/)[1]], sub: k + 1, subOf: pids.length });
+        out.push({ h2: s.h2, md: (k === 0 ? lead : '') + part, pids: [part.match(/^\{\{prompt:([\w-]+)\}\}/)[1]], sub: k + 1, subOf: pids.length });
         k++;
       }
     }
@@ -75,7 +75,7 @@
     const prompts = {};
     Object.keys(byId).forEach(id => { prompts[id] = inheritPrompt(byId[id], byId); });
     const assets = {};
-    (COURSE.assets || []).forEach(a => { assets[a.id] = Object.assign({}, a, { course: true }); });   // course.course: its files sit beside the course, not in a module's folder (set here, never published)   // course-level links (standard §3a); the module's own win
+    (COURSE.assets || []).forEach(a => { assets[a.id] = Object.assign({}, a, { course: true }); });   // course-level assets (standard §3a), marked course: true because their files sit beside the course, not in a module's folder (set here, never published); a module's own asset of the same id wins
     (mj.assets || []).forEach(a => { assets[a.id] = a; });
     const blocks = (mj.student || []).map(b => Object.assign({}, b, { file: slash(b.file), md: pkg.files[slash(b.file)] || '' }));
     const steps = [];
@@ -114,7 +114,7 @@
       model.blocks.find(b => norm(b.kind) === f || norm(b.id) === f) || model.blocks.find(b => norm(b.title).includes(f));
   }
   function mapGuide(model) {
-    // r2 quirk: "Shadows:" is prose. r3 makes it machine-readable; until then, match titles.
+    // "Shadows:" is either the standard's key or prose naming blocks and prompts; prose is matched against block titles.
     model.guide.forEach(sl => {
       if (!sl.shadows) return;
       // the standard's key (§5): block:<id> or prompt:<id>, exact
@@ -163,7 +163,7 @@
   const glossary = {};
   (COURSE.glossary || []).forEach(t => { glossary[t.id] = t; });
 
-  // ------------------------------------------------------------------ how the course measures learning (M2-31)
+  // ------------------------------------------------------------------ how the course measures learning
   // The course names its measures (meta.measures, checked by the build); a module's own list replaces the course's for
   // that module. Nothing named, nothing here: every function below answers with nothing.
   const courseMeasures = ((COURSE.meta || {}).measures || []).slice();

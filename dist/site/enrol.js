@@ -1,14 +1,13 @@
 // Letterman enrolment, the student's half: classes open to join, joining, a student's own classes, leaving.
-// Ruling: M2-21, the Director's mark of 2026-10-08, "I open a class, students join": "A signed-in student presses
-// Join, and the class appears on their home with its start date; you see who has joined." With the Director's rulings
-// of 2026-10-08 (classes are listed for anyone, guests included, by display name and never an account id), M2-20
-// (a guest is asked to sign in to join), M2-28 (an account id never shows), M1-26 (a class's times are its teacher's
-// time zone's, with the student's own beside them when their clock differs) and Charter law 8.
+// A teacher opens a class; a signed-in student presses Join, and the class appears on their home with its start date.
+// Classes are listed for anyone, guests included, by the teacher's display name and never an account id. A guest is
+// asked to sign in to join. A class's times are in its teacher's time zone, with the student's own beside them when
+// their clock differs.
 //
 // The service is reached only through account.js (ACC.ask for the open list, which anyone may read; ACC.act for what
 // a signed-in account does). Nothing here ever holds an account id: the service's functions return none.
 //
-// Law 8, in this file: a guest sends nothing about themselves. Their home reads the public list of classes open to
+// Privacy, in this file: a guest sends nothing about themselves. Their home reads the public list of classes open to
 // join (one request with the public key: no body of theirs, no sign-in, nothing stored), and the service's library
 // is never loaded for them. A join a guest starts waits, in this tab only (sessionStorage), for their sign-in and
 // their yes; it holds a class id, nothing else.
@@ -39,7 +38,7 @@
     return new Date(t);
   }
   const addDays = (date, n) => { const [y, m, d] = String(date).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
-  // One date format everywhere on the student page (the Designer's S8): the device's own, as app.js writes every other
+  // One date format everywhere on the student page: the device's own, as app.js writes every other
   // date ("Monday, October 19" and "6:00 PM" on an American English device; "Monday 19 October" and "18:00" on a British one)
   const dayLabel = (at, tz) => new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long' }).format(at);
   const clockLabel = (at, tz) => new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(at);
@@ -162,10 +161,9 @@
     }
 
     // ------------------------------------------------------------------- home: "Your classes" and "Open to join"
-    // The home page's two sections (app.js, M2-24) are drawn here from what account.js's listings() read: the same
+    // The home page's two sections (app.js) are drawn here from what account.js's listings() read: the same
     // headings and list, each class with when it meets (the teacher's zone, and the student's own when it differs),
-    // its weeks, and Join, or Leave and Add to calendar. Every home page shows them, a guest's included (the Director's
-    // ruling of 2026-10-08: "It shows under 'Open to join' on every home page, guests included"). Join is a quiet
+    // its weeks, and Join, or Leave and Add to calendar. Every home page shows them, a guest's included. Join is a quiet
     // button here: the home page keeps one primary action, the student's own next step.
     function itemHTML(c, kind) {
       const w = when(c), id = esc(c.class_id);
@@ -192,7 +190,7 @@
     // ------------------------------------------------------------------- the list, and a join link's card
     E.view = async function (parts) {
       const focus = parts[0] === 'join' ? parts[1] : null;
-      // the Designer's P8: a page of the Academy, its kicker and title, then your classes and the ones open to join
+      // a page of the Academy: its kicker and title, then your classes and the ones open to join
       o.setTitle(focus ? 'Join a class' : 'Classes');
       const head = `<p class="kicker">The Academy</p><h1>${focus ? 'Join a class' : 'Classes'}</h1>`;
       if (!on) { o.paint(`${head}<p>Classes need Letterman's class service, and this copy of Letterman has none.</p><p><a class="btn quiet" href="#/">Back to the course</a></p>`); return; }

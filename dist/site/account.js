@@ -1,17 +1,15 @@
 // Letterman's account: sign-in, the first-time yes, the display name, carrying work between devices, the export
 // and erase of what the service keeps, and whether the account is a teacher.
-// Rulings: M2-20 ("Optional for students, required for me"; "A student can always open the week as a guest";
-// "Kept from today: nothing is stored before the student says yes, and they can export or erase it all"),
-// M2-28 ("A NAME AND A LOGIN ARE TWO DIFFERENT THINGS"), M2-19 ("sign-up says students must be 13 or older"),
-// M2-18 (the service and its access rules), Charter law 8, and the Director's rulings of 2026-10-08.
+// Accounts are optional for students: the week always opens as a guest. Nothing is stored before the student says
+// yes, and they can export or erase it all. A display name and a login are two different things. Accounts are for
+// people 13 or older.
 //
-// Law 8, in this file:
+// Privacy, in this file:
 //   - With no service configured, nothing here runs, and the page is the guest app.
 //   - A guest who never signs in sends nothing of theirs to the service: the service's library
-//     (vendor/supabase.js) is fetched only when someone signs in, or already holds a sign-in here. The one thing a
-//     guest's page asks the service is the two public listings the Director opened to anyone on 2026-10-08 (the
-//     open classes, and their announcements), as a plain read with the page's public key (M2-24, A.listings), and,
-//     the same way, which class is live (M2-22: "every student's own page shows a Live button ... guests included").
+//     (vendor/supabase.js) is fetched only when someone signs in, or already holds a sign-in here. A guest's page
+//     asks the service only for the two public listings (the open classes and their announcements), as a plain
+//     read with the page's public key (A.listings), and, the same way, which class is live.
 //   - Until the account has said its two yeses, the sign-in is held only for this tab (sessionStorage), never in
 //     the browser's lasting storage, and "Not now" erases the sign-in from the service at once.
 //   - The account id is used to ask the service for the account's own rows and is never put on the page.
@@ -146,7 +144,7 @@
       });
       return client;
     }
-    // The live room (live.js, M2-22) uses this same client, never a second one: two would contend for the sign-in
+    // The live room (live.js) uses this same client, never a second one: two would contend for the sign-in
     // kept under one storage key. For a guest, asking for it loads the library; live.js asks only when they press Live.
     A.client = getClient;
 
@@ -385,7 +383,7 @@
         const d = o.device.get();
         for (const row of data || []) {
           lastPushed[row.module] = JSON.stringify(row.state);
-          // the announcements this account has put away (M2-24): kept with the account, joined with this device's
+          // the announcements this account has put away: kept with the account, joined with this device's
           if (row.module === SEEN) { d.seen = Object.assign({}, (row.state || {}).seen, d.seen); continue; }
           d.modules[row.module] = mergeModule(d.modules[row.module], row.state);
         }
@@ -460,9 +458,9 @@
       const d = o.device.get(); delete d.carriedFor; delete d.sync; o.device.save(); tell();
       return true;
     };
-    // ------------------------------------------------------------------------------- hand-ins and classes (M2-23)
+    // ------------------------------------------------------------------------------- hand-ins and classes
     // The hand-in, the conversation and the console's hand-ins use the one client above (A.client), and ask for it only
-    // for a signed-in account, so a guest's page never loads the library for them (law 8).
+    // for a signed-in account, so a guest's page never loads the library for them.
     // The classes this account joined as a student, for one course, newest first. Asked by the account id here, so
     // the id never leaves this file; a teacher's own classes are not in it.
     A.myClasses = async course => {
@@ -503,10 +501,9 @@
       try { await loadAccount(); } catch (e) { trouble(e); return false; }
       return A.state === 'member' && A.teacher;
     };
-    // ------------------------------------------------------------------------------- the home page's classes (M2-24)
+    // ------------------------------------------------------------------------------- the home page's classes
     // "Your classes" (a signed-in student's enrolments), "Open to join" (open_classes()), and each class's
-    // announcements. A guest reads only the two public listings the Director's rulings of 2026-10-08 opened to
-    // anyone ("listed for anyone, guests included"; "guests see them"): a plain GET with the page's public key,
+    // announcements. A guest reads only the two public listings: a plain GET with the page's public key,
     // carrying no account, no name and no answer, and the service's library is not fetched for it.
     const JWT = /^[\w-]+\.[\w-]+\.[\w-]+$/.test(svc.key);
     async function publicRead(fn, params) {
@@ -516,7 +513,7 @@
       if (!r.ok) throw Object.assign(new Error('the service answered ' + r.status), { status: r.status });
       return r.json();
     }
-    // the live room (live.js, M2-22) asks which class is live the same way, and only that
+    // the live room (live.js) asks which class is live the same way, and only that
     A.publicRead = fn => fn === 'live_now' ? publicRead(fn) : Promise.reject(new Error('not a public read'));
     // A class as the pages show it: never an account id (the service's functions return none).
     const classOf = x => ({ class_id: x.class_id, title: x.title, course: x.course, starts_on: x.starts_on, meets_at: x.meets_at || null,
@@ -530,14 +527,14 @@
         if (member) {
           const c = await getClient();
           const o = await c.rpc('open_classes'); if (o.error) throw o.error; open = o.data || [];
-          // the student's own classes with their teachers' display names (M2-21's my_classes(): no account id at all)
+          // the student's own classes with their teachers' display names (my_classes() returns no account id)
           const e = await c.rpc('my_classes'); if (e.error) throw e.error;
           mine = (e.data || []).map(classOf);
         } else open = await publicRead('open_classes');
         open = (open || []).map(classOf);
         // whose announcements show: the student's own classes; with none, the listed classes of this course. Everyone
         // reads them the one way, through class_announcements(), which hides one that has ended and sends no account id
-        // (M2-24: the service decides who may read; the page only asks).
+        // (the service decides who may read; the page only asks).
         const forNotes = mine.length ? mine : open.filter(x => x.course === course);
         for (const k of forNotes) {
           const rows = member ? await (async () => { const r = await (await getClient()).rpc('class_announcements', { p_class: k.class_id }); if (r.error) throw r.error; return r.data || []; })()
@@ -549,7 +546,7 @@
       } catch (e) { if (!trouble(e) && e && e.status >= 500) trouble({ status: 0 }); return null; }
     };
     // ------------------------------------------------------------------------------- for the page's other parts
-    // enrol.js (classes and joining, M2-21) reaches the service only through these two, and both answer
+    // enrol.js (classes and joining) reaches the service only through these two, and both answer
     // { data, error }. Network trouble, or a service that answers with a server error (a paused project), shows once
     // under the running head, as for every other call here, and comes back as error.code 'unreachable'.
     //   ask: one of the two public listings (open_classes; class_announcements). A guest's read is publicRead above:
@@ -580,8 +577,8 @@
         return r;
       } catch (e) { trouble(e); return down(e); }
     };
-    // ------------------------------------------------------------------------------- how learning is measured (M2-31)
-    // The values kept for a measure the course names (supabase/migrations/20261009000100_measures.sql). The service's
+    // ------------------------------------------------------------------------------- how learning is measured
+    // The values kept for a measure the course names (supabase/migrations/20261009000200_measures.sql). The service's
     // rules decide who reaches what; these only ask. No account id is returned to the page: a student's own values come
     // back without who recorded them, and a teacher's roster is held here, the page knowing each student by a number.
     A.myMeasures = async () => {

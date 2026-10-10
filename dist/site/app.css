@@ -1,17 +1,13 @@
-/* Letterman's look: "Letterman Library & Press" (the Director's name for it, 2026-10-09). The Press (round 3's entrant B,
-   crowned by the Director on 2026-10-09: "B is the winner and is near-perfect"), in palette P2, "Library" (ratified by
-   the Director on 2026-10-09: "P2 confirmed. Palette 2, library."). The course as a
-   well-made book: the well-set page, the running head, contents with leaders and folios, the guide in the margin, the
-   ribbon that keeps the student's place. The reading room of a great university library: ink blue and warm stone carry
-   the pages, a library violet keeps the ribbon at your place (red is Live's, and danger's), brass marks the institution; the title page opens on a shelf of cloth spines.
-   EVERY COLOUR IS A TOKEN, IN THE ONE BLOCK BELOW (light, then dark), with P2's values exactly as its palette sheet
-   (M2_Competition\Palette\P2\palette.html) gives and measures them. No colour literal is written anywhere else in this
-   file, in app.js, index.html, download.html or privacy.html (tools/tokens.mjs proves it). */
+/* Letterman's student page. The course is laid out as a book: the running head, contents with leaders and folios, the
+   guide in the margin, and a ribbon that keeps the student's place. Violet marks "you are here"; red is kept for Live
+   and for danger.
+   EVERY COLOUR IS A TOKEN, IN THE ONE BLOCK BELOW (light, then dark). No colour literal is written anywhere else in this
+   file, in app.js, index.html, download.html or privacy.html (tools/tokens.mjs checks it). */
 
 /* ============================== TOKENS: BEGIN (the one place colour lives) ============================== */
 :root {
   color-scheme: light;
-  /* the room: stone, with daylight, ink-blue shade, green lamp glass and a little red warmth */
+  /* the page background and its four soft colour washes */
   --bg: #E6DFD2;
   --wash-a: rgba(244, 204, 128, .50); --wash-b: rgba(116, 144, 208, .34); --wash-c: rgba(86, 140, 110, .25); --wash-d: rgba(186, 92, 68, .10);
   /* the pages: layered paper and stone */
@@ -22,17 +18,16 @@
   --accent: #2C4885; --btn: #1F2B4E; --btn-hover: #2E3F6F; --btn-ink: #FFFFFF; --btn-sub: #CFD6E8; --focus: #2C4885;
   /* the ribbon, the brass, the good */
   --ribbon: #A8302A; --ribbon-ink: #962922; --gold: #A27628; --gold-ink: #775512; --ok: #2D6A4B;
-  /* "you are here": the ribbon, the strip's here-mark, the crumb's mark, the contents' here-row (the Director, 2026-10-09:
-     Live keeps the red; "you are here" gets its own Library colour). A library violet of the shelf's cloth (--e7, --series-0),
-     measured by tools/layout.mjs: 4.55:1 or more on every surface it sits on; CIEDE2000 from Live 37 (protanopia 45,
-     deuteranopia 51); and always the ribbon's notched shape, where Live is a pill with a dot and its word */
+  /* "you are here": the ribbon, the strip's here-mark, the crumb's mark, the contents' here-row. A violet kept apart
+     from Live's red, 4.5:1 or more on every surface it sits on, and always in the ribbon's notched shape, where Live is
+     a pill with a dot and its word */
   --here: #5A3AAE;
-  --on-mark: #FFFFFF;                      /* the tick on a done step (P2: white by day) */
-  --plate: #FFFFFF;                        /* behind a figure: the course's diagrams are drawn on white (as B and P2) */
+  --on-mark: #FFFFFF;                      /* the tick on a done step */
+  --plate: #FFFFFF;                        /* behind a figure: the course's diagrams are drawn on white */
   --live-bg: #962922; --live-ink: #FFFFFF; /* the Live chip on the stage: ribbon ink, white words */
   --scrim: rgba(26, 34, 56, .52);          /* behind a sheet: the ink, dimmed */
   --screen: #141A26;
-  /* depth (P2's shadows, in the warm brown of the room) */
+  /* depth: shadows in a warm brown */
   --shadow: 0 1px 2px rgba(44, 36, 22, .07), 0 8px 24px -8px rgba(44, 36, 22, .20);
   --shadow-lift: 0 2px 4px rgba(44, 36, 22, .07), 0 18px 40px -14px rgba(44, 36, 22, .32);
   --shadow-menu: 0 12px 32px -8px rgba(44, 36, 22, .32);
@@ -49,11 +44,11 @@
   /* the shelf on the title page, the module opener and the download page: oak, cloth spines, gilt */
   --e0: #2C241C; --e-shelf: #6B4A2C; --e-gilt: #CDA85E; --e-label: #DCCDA9;
   --e1: #283A66; --e2: #7C2C26; --e3: #3A5A46; --e4: #B29F7C; --e5: #48526A; --e6: #6A4A2E; --e7: #57507A;
-  /* the course's own cover art (the marbled volume on the shelf): kept exactly as B drew it */
+  /* the course's cover art: the marbled volume on the shelf card, and the cover colour of each volume */
   --m0: #F2EADF; --m1: #2B3E9E; --m2: #D2553A; --m3: #E8B04A; --m4: #2F8F7A; --m5: #F7F1E6; --m6: #7A5AC8;
   --cover-0: #5A4CC0; --cover-1: #C9442A; --cover-2: #2D5FC4; --cover-3: #1D8463; --cover-4: #B07A1E;
   --cover-5: #A23C84; --cover-6: #24788F; --cover-7: #7B5A30; --cover-8: #4A5578;
-  /* the earlier names, which the teaching console's own stylesheet still uses */
+  /* aliases used by the teaching console's stylesheet */
   --paper: var(--bg); --card: var(--leaf); --line: var(--rule); --line-2: var(--rule-2); --tint: var(--leaf-3);
   --on-accent: var(--btn-ink); --accent-2: var(--btn-hover); --mark: var(--accent); --ref: var(--ribbon-ink); --ref-tint: var(--leaf-2);
   --first: var(--ink-3); --gold-bg: color-mix(in srgb, var(--gold) 14%, var(--leaf)); --ok-bg: color-mix(in srgb, var(--ok) 12%, var(--leaf));
@@ -450,7 +445,7 @@ a.sign:hover { background: var(--leaf-2); color: var(--ink); }
 .lv-step { display: grid; grid-template-columns: 17.875rem minmax(0, 1fr) 22.5rem; gap: 1.625rem; align-items: start; max-width: 105rem; margin: 0 auto; padding: 1.5rem 1.5rem 0; }
 .lv-step.no-guide { grid-template-columns: 17.875rem minmax(0, 1fr) 4rem; }
 /* the rail: its heading at the top, then one scrolling column of the contents, and under it, pinned, the neighbouring
-   modules (B's rail foot), so what comes before and after is always in view; nothing in it covers anything else */
+   modules, so what comes before and after is always in view; nothing in it covers anything else */
 .rail { position: sticky; top: calc(var(--headH) + 1rem); max-height: calc(100vh - var(--headH) - 2rem); display: flex; flex-direction: column; overflow: hidden; background: var(--glass); border: 1px solid var(--rule); border-radius: 10px; padding: 0 .875rem; }
 .rail-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; margin: 0 -.875rem; padding: .25rem .875rem .875rem; }
 .rail-h { flex: none; background: var(--leaf); display: block; padding: .625rem 1.5rem .75rem; margin: 0 -.875rem .375rem; border-bottom: 1px solid var(--rule); text-decoration: none; color: var(--ink); border-radius: 9px 9px 0 0; }
@@ -629,7 +624,7 @@ button.term[aria-expanded="true"] { background: var(--leaf-3); border-bottom-sty
 .answer dt { font: 700 .81rem var(--sans); color: var(--ink-2); margin-top: .5rem; }
 .answer dd { margin: 0; }
 .explain { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--rule); }
-/* (written under .commentary: its own "p" rule would otherwise set them as reading text, the Designer's S3) */
+/* scoped under .commentary: its own "p" rule would otherwise set this as reading text */
 .commentary .ex-why { margin: 0 0 .5rem; font: 650 .72rem/1.3 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-ink); }
 .explain h3 { font-size: 1.3rem; }
 .explain h4 { font-size: 1.1rem; }
@@ -703,7 +698,7 @@ details.worked { margin-top: .8rem; }
 .msg:empty { margin: 0; }
 .flash { background: var(--ok-bg); border-radius: 8px; padding: .6rem .8rem; font-weight: 600; }
 .feedback { border-top: 4px solid var(--gold); margin-bottom: 1rem; }
-/* M2-31: how the course measures learning, in the course's own words. Present only where a course names a measure. */
+/* how the course measures learning, in the course's own words. Present only where a course names a measure. */
 .m-place { display: contents; }
 .m-desc { display: block; margin: .25rem 0 0; font: .95rem/1.45 var(--sans); color: var(--ink-2); }
 .m-vals { margin: .5rem 0 0; padding-left: 1.1rem; font: 500 1rem/1.45 var(--serif); }
@@ -795,7 +790,7 @@ body.stage .guide { scrollbar-width: none; }
 body.stage .lv-step { grid-template-columns: minmax(0, 1fr) 24rem; max-width: none; padding: 1rem 1.25rem 0; }
 body.stage .rail, body.stage .margin-off, body.stage .panes, body.stage .back-to-lesson { display: none !important; }
 body.stage .leafpage { max-width: 56rem; padding: 1.5rem 3rem 2.5rem; }
-body.stage .travel { max-width: 56rem; }   /* Back and Next as wide as the leaf, on its edges (P5) */
+body.stage .travel { max-width: 56rem; }   /* Back and Next as wide as the leaf, on its edges */
 body.stage .prose { font-size: 1.4rem; }
 body.stage .leafpage h1 { font-size: 3rem; }
 body.stage .guide { display: block !important; position: sticky; top: calc(var(--headH) + 1rem); max-height: calc(100vh - var(--headH) - 2rem); overflow: auto; font-size: 1.1rem; }
@@ -830,7 +825,7 @@ body.chart-beside .lv-step { grid-template-columns: minmax(0, 1fr) !important; }
   .brand span { display: none; }
   .tally { margin-left: auto; }
 }
-/* the running head holds whole at every desk width (the Designer's F1 and F2): below 1600 the whereabouts is the title
+/* the running head holds whole at every desk width: below 1600 the whereabouts is the title
    alone, on up to two lines, and the account button its icon (the name is the Home crumb's, and the button's label) */
 @container app (min-width: 761px) and (max-width: 1599px) {
   .whereabouts .w0 { display: none; }

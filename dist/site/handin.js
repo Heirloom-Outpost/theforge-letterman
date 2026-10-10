@@ -1,16 +1,15 @@
 // Letterman's hand-in inside the portal, its count on the progress bar, and the teacher's reply on the student's page.
-// Ruling: M2-23, the Director's note of 2026-10-08 ("Both in the portal"). The row: "Hand-ins: inside the portal,
-// counted on the progress bar (hand-in 1 of 8); your reply lands on the student's page instead of a link. At first a
-// hand-in carries text or a link to the file, because animation files fill the free storage fast."
+// The teacher's reply lands on the student's page instead of arriving as a link. A hand-in carries text or a link to
+// the file, not the file itself, because animation files would fill the service's free storage fast.
 //
 // Who hands in where:
 //   - a signed-in student who joined a class for this course hands in here: text, an https link, or both, kept in the
 //     service's hand_ins table, seen by them and that class's teacher only (the service's rules, supabase/migrations);
-//   - everyone else (a guest, or a student in no class yet) hands in as before, by copying the message and opening the
-//     class's Discord (app.js), so no account stands between a student and the week (Charter law 8).
+//   - everyone else (a guest, or a student in no class) hands in by copying the message and opening the class's
+//     Discord (app.js), so no account stands between a student and the week.
 // The count, "hand-in 1 of 8", counts the modules handed in either way, out of the course's modules that ask for one:
-// a module whose package is in this build counts if it has an assignment; a module not built yet counts too, because
-// its package cannot say otherwise until it exists.
+// a module whose package is in the build counts if it has an assignment; a module whose package is not in the build
+// counts too, because there is no package to say otherwise.
 // No line of this file names a course, a module or a channel.
 (function () {
   'use strict';

@@ -1,6 +1,6 @@
-/* The hand-in inside the portal, the reply on the student's page, and the class's conversation (M2-23).
+/* The hand-in inside the portal, the reply on the student's page, and the class's conversation.
    Colours only from the tokens block at the top of app.css (tools/tokens.mjs checks this file too); fields, cards and
-   buttons are app.css's own, so these pieces look like the rest of The Press. */
+   buttons are app.css's own, so these pieces look like the rest of the page. */
 
 /* the sheet: the same fields as the prompts' */
 .hi-svc textarea, .hi-svc input[type=url], .talk-form textarea {
@@ -22,7 +22,7 @@
 
 /* the count in the running head: whole, never cut in half. While a class is live, the Live button needs its place: the
    count folds away from sight there (it stays in the head's spoken words, and on the week card), so the account button
-   and the theme stay on the screen (tools/live.mjs, head-intact) */
+   stays on the screen (tools/live.mjs, head-intact) */
 .hi-count { white-space: nowrap; }
 .head:has(.live-bar:not([hidden])) .tally .hi-count { display: none; }
 

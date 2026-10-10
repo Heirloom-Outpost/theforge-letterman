@@ -1,14 +1,12 @@
-// Letterman's view of the class's conversation: one post per module, on Discord, shown inside the portal (M2-23).
-// The Director, 2026-10-08: "If the Discord discussion data can somehow be rendered into Letterman, if users could post
-// in the Discord discussion THROUGH Letterman, that would be very ideal and convenient"; "One conversation, on
-// Discord". The row: "First, each module links to its post. Then Letterman shows the post inside the portal, and a
-// signed-in student posts into it from Letterman." "Reading the post needs no sign-in; posting does."
+// Letterman's view of the class's conversation: one post per module, on Discord, shown inside the portal. There is
+// one conversation, on Discord: each module links to its post, Letterman shows the post, and a signed-in student can
+// post into it from Letterman. Reading needs no sign-in; posting does.
 //
 // Which post belongs to which module is this deployment's (letterman.deployment.json, discord.discuss.<course>.posts,
 // by module number), never the app's. Reading and posting go through the service's discussion function
 // (supabase/functions/discussion), which holds Letterman's Discord bot token and webhook; the page never sees either.
 // A guest's page asks the function only when the guest opens the conversation, and sends nothing of theirs: no name,
-// no answers (law 8). Posting needs the student's sign-in, which the function checks with the service itself.
+// no answers. Posting needs the student's sign-in, which the function checks with the service itself.
 (function () {
   'use strict';
   const POST = /^https:\/\/discord\.com\/channels\/\d{15,25}\/(\d{15,25})$/;
@@ -28,8 +26,8 @@
     notDeleted: 'Discord did not delete it just now. Nothing changed. Try again.'
   };
   function create(x) {
-    // x: the page's own parts (app.js): CFG, courseKey, esc, acc, header, shell, setTitle, focusMain, modLabel, lastStep,
-    // returnTo, when, unit
+    // x: the page's own parts (app.js): CFG, courseKey, esc, acc, sheet, closeSheet, paint, setTitle, focusMain, modLabel,
+    // lastStep, returnTo, when, unit
     const { esc } = x;
     const conf = () => ((x.CFG.discord || {}).discuss || {})[x.courseKey] || null;
     const server = () => (x.CFG.discord || {}).server || 'Discord';
@@ -52,8 +50,8 @@
         <div class="btnrow">${p && svc() ? `<a class="btn primary" href="#/m/${model.folder}/talk">Read the conversation here</a>` : ''}${p ? ext(p.url, 'Open the post in Discord') : ext(ch.url, `Open ${esc(ch.name || server())}`)}</div></section>`;
     }
 
-    // The student's own posts from Letterman, by Discord's number for each message: the record that lets them delete it
-    // (the Director, 2026-10-09: "Yes, they can delete"). Read from the service as the student; the rules show no one
+    // The student's own posts from Letterman, by Discord's number for each message: the record that lets them delete
+    // it. Read from the service as the student; the rules show no one
     // else's, so a classmate's page offers no button on anyone else's post.
     let ownPosts = {};
     async function loadOwn(p) {

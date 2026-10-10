@@ -1,4 +1,4 @@
-/* Enrolment (M2-21): the home page's "Your classes" and "Open to join" items, the class list and a join link's card,
+/* Enrolment: the home page's "Your classes" and "Open to join" items, the class list and a join link's card,
    the join and leave sheets. Every colour is a token from app.css's tokens block (tools/tokens.mjs scans this file). */
 .cls .enrol-item { gap: 3px; }
 .cls .enrol-item .enrol-when { font-weight: 600; color: var(--ink); }

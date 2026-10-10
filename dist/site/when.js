@@ -1,16 +1,15 @@
-// Letterman's times: the one place a time or a date is put into words (M1-26).
-// The Director, 2026-10-02: "this shouldn't be hardcoded but a custom config, but times displayed in the professor's time
-// zone". The row: "the course sets its time zone, and every time shows in the teacher's." So: the course says its time
+// Letterman's times: the one place a time or a date is put into words.
+// Times show in the teacher's time zone, which is configuration, never code: the course says its time
 // zone (course.json meta.time_zone, an IANA name such as "America/Los_Angeles"); a class's own time zone (the classes
 // table, set by its teacher) wins for a student in that class. Every time then shows in that zone, named, with the
 // student's own time beside it when it is different: "Monday 12 October, 18:00 Los Angeles time. That is 10:00 on
 // Tuesday where you are." A module opens at the start of its date in that zone, for everyone at once.
 // With no zone (a course that has not said one, and no class), every time is on the student's own clock and a module
-// opens at the start of its date there, as before.
+// opens at the start of its date there.
 // No line of this file names a course or a place: the zone comes from the course or the class.
 (function () {
   'use strict';
-  const LOCALE = 'en-GB';   // "Monday 12 October", "18:00": the page's language is the course's; English today (board row C10)
+  const LOCALE = 'en-GB';   // "Monday 12 October", "18:00": the page's language is the course's, which is English
   function valid(tz) { if (typeof tz !== 'string' || !tz) return false; try { new Intl.DateTimeFormat('en', { timeZone: tz }); return true; } catch (e) { return false; } }
   function deviceZone() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { return null; } }
   // how far the zone's clock is from UTC at an instant, in milliseconds
@@ -61,7 +60,7 @@
       // when a dated module opens: the start of its date in the teacher's zone
       opensAt: date => midnight(date, z),
       opens(date) {
-        if (!z) return { main: day(midnight(date, null)), local: null };   // as before: the date, on the student's own clock
+        if (!z) return { main: day(midnight(date, null)), local: null };   // no zone: the date, on the student's own clock
         const t = midnight(date, z);
         return { main: `${day(t, z)}, ${clock(t, z)} ${label(z)}`, local: beside(t) };
       }

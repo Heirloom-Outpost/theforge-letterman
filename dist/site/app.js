@@ -1,5 +1,4 @@
-// Letterman student portal. The look is "Letterman Library & Press" (the Director's name for it, 2026-10-09): round 3's
-// entrant B, The Press ("B is the winner and is near-perfect"), in palette P2, Library. The course as a well-made book: a running head on every screen with four levels
+// Letterman student portal. The course is laid out as a book: a running head on every screen with four levels
 // (Home, Course, Module, Step), a ribbon at the student's place in every contents page, chapter openers, the guide as
 // commentary in the margin. One renderer for any package-v1 module: no line of this file names a module, a prompt
 // id or a block id, and no colour is written here (every colour is a token in app.css).
@@ -10,7 +9,7 @@
   const { esc } = window.MD;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const slash = p => String(p || '').replace(/\\/g, '/');                 // r2 quirk: backslash paths
+  const slash = p => String(p || '').replace(/\\/g, '/');                 // content paths may use backslashes
   const STAGE = /[?&]stage\b/.test(location.search);
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const DARK_MQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : { matches: false, addEventListener() { } };
@@ -21,13 +20,13 @@
   let mem = { consent: null, name: '', modules: {} };
   try { const s = !STAGE && localStorage.getItem(KEY); if (s) mem = Object.assign(mem, JSON.parse(s)); } catch (e) { /* storage blocked: memory only */ }
   let askedPersist = false;
-  // The account (account.js; M2-20, M2-28, M2-19). With no service configured, or a guest who never signs in, it
+  // The account (account.js). With no service configured, or a guest who never signs in, it
   // loads nothing and sends nothing of the student's. A signed-in student's work is carried to their account even
   // when this device keeps nothing (their yes to keeping their work is the account's own).
   let ACC = null, ENROL = null;
-  // The live room (live.js; M2-22): the Live button while the teacher teaches. Never on the stage.
+  // The live room (live.js): the Live button while the teacher teaches. Never on the stage.
   let LIVE = null;
-  let HI = null, DS = null;   // the hand-in inside the portal, and the class's conversation (M2-23); made at the end
+  let HI = null, DS = null;   // the hand-in inside the portal, and the class's conversation; made at the end
   function persist() {
     if (STAGE) return;
     if (ACC) ACC.changed();
@@ -40,8 +39,7 @@
   function ans(modId, pid) { const m = ms(modId); return m.answers[pid] || (m.answers[pid] = { history: [], judged: {} }); }
   function anyProgress() { return Object.values(mem.modules).some(m => Object.keys(m.answers).length || Object.keys(m.visited).length); }
   const committedCount = () => Object.values(mem.modules).reduce((k, m) => k + Object.values(m.answers || {}).filter(a => a.committed).length, 0);
-  // Appearance (Settings only: the Director, 2026-10-09, took the theme button out of the running head): the theme
-  // matches the system unless the student picks one; text can be larger. The browser's own bar takes the page's
+  // Appearance (set in Settings): the theme matches the system unless the student picks one; text can be larger. The browser's own bar takes the page's
   // background token.
   function themeColor() {
     let m = $('meta[name="theme-color"]');
@@ -64,10 +62,9 @@
   // ------------------------------------------------------------------ content model (model.js)
   const M = window.LMModel.create(CONTENT);
   const { courseKey, COURSE, glossary, buildModel, okLang, courseLang } = M;
-  // Times (M1-26, the Director, 2026-10-02: "times displayed in the professor's time zone"): every time shows in the
-  // teacher's time zone, with the student's own beside it (app/when.js). The zone is the course's (course.json
-  // meta.time_zone) until the student is in a class, whose own zone then wins (zoneFromClass, once the account's classes
-  // are known). A course with no zone, and no class, keeps the student's own clock, as before.
+  // Times: every time shows in the teacher's time zone, with the student's own beside it (app/when.js). The zone is the
+  // course's (course.json meta.time_zone) until the student is in a class, whose own zone then wins (zoneFromClass, once
+  // the account's classes are known). A course with no zone, and no class, uses the student's own clock.
   let ZONE = null, WHEN = null;
   function setZone(z) {
     const want = window.LMWhen && window.LMWhen.valid(z) ? z : null;
@@ -94,7 +91,7 @@
     document.documentElement.lang = pageLang;
   }
   setZone(COURSE.meta.time_zone);
-  // The release cadence (the Director, 2026-10-02): a released module opens on its calendar date, at the start of that
+  // The release cadence: a released module opens on its calendar date, at the start of that
   // day in the teacher's time zone (on the student's own clock where there is none). The stage window and a preview
   // build are never locked.
   const notYet = d => !!d && Date.now() < WHEN.opensAt(d);
@@ -169,9 +166,9 @@
   const nextPlanned = () => COURSE.modules.find(m => !(m.folder && COURSE.packages[m.folder]) && (m.lockedUntil || m.opens) && notYet(m.lockedUntil || m.opens));
 
   // ------------------------------------------------------------------ the course's words, and the app's plain ones
-  // The course's own words. Standard §3a meta gives title, description and language; the Academy is asked for `welcome`
-  // (the home line) and `unit` (what the course calls one step of its calendar). Where the course has none yet, a plain
-  // neutral word stands in: the app names no course.
+  // The course's own words. Standard §3a meta gives title, description and language; it may also give `welcome` (the
+  // home line) and `unit` (what the course calls one step of its calendar). Where the course has none, a plain neutral
+  // word stands in: the app names no course.
   const courseShort = COURSE.meta.title.split(':')[0].trim();
   const courseSub = COURSE.meta.title.split(':').slice(1).join(':').trim();
   const UNIT = (COURSE.meta.unit || 'module').toLowerCase();
@@ -221,9 +218,8 @@
     check: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 8.4 6.6 11.4 12.5 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   const RIBBON = '<svg class="ribbon-svg" viewBox="0 0 14 26" aria-hidden="true" focusable="false"><path d="M0 0h14v26l-7-6.5L0 26z"/></svg>';
-  // The endpaper (palette P2, "Library"): a reading-room shelf of cloth spines with gilt bands, standing on an oak edge.
-  // It replaces B's marbling (which B's own designer named its weakest point) on the course title page, the module
-  // opener and the download page. Its colours are the tokens --e*. Decorative only.
+  // The endpaper: a shelf of cloth spines with gilt bands, on the course title page and the module opener.
+  // Its colours are the tokens --e*. Decorative only.
   function shelf(seed) {
     const cloth = ['var(--e1)', 'var(--e5)', 'var(--e2)', 'var(--e1)', 'var(--e4)', 'var(--e3)', 'var(--e1)', 'var(--e6)', 'var(--e5)', 'var(--e7)', 'var(--e2)', 'var(--e3)'];
     const W = [30, 38, 26, 34, 44, 28, 32, 24, 36];
@@ -238,8 +234,8 @@
     }
     return `<svg class="marble shelf" viewBox="0 0 1200 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><rect width="1200" height="160" fill="var(--e0)"/>${b}<rect y="150" width="1200" height="10" fill="var(--e-shelf)"/><rect y="150" width="1200" height="1.5" fill="var(--e-gilt)" opacity=".55"/></svg>`;
   }
-  // The course's own cover art on the shelf card: B's marbled volume, kept exactly as B drew it (tokens --m0 to --m6,
-  // its filter #lm-marble in index.html), on B's own series colour for that volume (tokens --cover-N).
+  // The course's cover art on the shelf card: a marbled volume (tokens --m0 to --m6, its filter #lm-marble in
+  // index.html), on the cover colour for that volume (tokens --cover-N).
   function marble(seed) {
     const cols = ['var(--m1)', 'var(--m2)', 'var(--m3)', 'var(--m4)', 'var(--m5)', 'var(--m2)', 'var(--m6)', 'var(--m1)', 'var(--m3)'];
     let bands = '';
@@ -251,11 +247,11 @@
   // ------------------------------------------------------------------ rendering helpers
   function figureHTML(model, id, alt) {
     const a = model.assets[id];
-    if (!a) return `<p class="muted">[missing visual: ${esc(id)}]</p>`;
+    if (!a) return `<p class="muted">A picture belongs here but is missing (${esc(id)}).</p>`;
     let src;
     if (a.file) src = assetUrl(model, a.file, a);
     else if (a.url) {
-      // r2 quirk: a Wikimedia "File:" page, not the image. Special:FilePath serves the image itself.
+      // a Wikimedia "File:" page is not the image; Special:FilePath serves the image itself
       const m = a.url.match(/commons\.wikimedia\.org\/wiki\/(File:[^?#]+)/);
       src = m ? `https://commons.wikimedia.org/wiki/Special:FilePath/${m[1].replace(/^File:/, '')}?width=900` : a.url;
     }
@@ -263,8 +259,8 @@
     const credit = a.kind === 'work'
       ? `${esc(a.credit)} <a href="${esc(a.source_url || a.url)}" target="_blank" rel="noopener">Source<span class="sr-only"> (opens a new tab)</span></a>`
       : esc(a.credit || '');
-    // The course's own description of the picture comes first (standard §4: assets[].alt wins; the text's own alt is the
-    // Notepad fallback). A work that moves is shown as its still until the student plays it (WCAG 2.2.2); sound and video
+    // The course's own description of the picture comes first (standard §4: assets[].alt wins; the alt text in the Markdown
+    // is the fallback). A work that moves is shown as its still until the student plays it (WCAG 2.2.2); sound and video
     // carry the course's captions (WCAG 1.2.2). Nothing starts by itself.
     const desc = a.alt || alt || '';
     const media = mediaKind(a);
@@ -425,7 +421,7 @@
     if (parts[0] === 'heard') viewHeard();
     else if (parts[0] === 'settings' || parts[0] === 'data') viewSettings();   // #/data: the pane's earlier address
     else if (parts[0] === 'teach') viewTeach();
-    else if ((parts[0] === 'classes' || parts[0] === 'join') && ENROL) ENROL.view(parts);   // enrol.js (M2-21)
+    else if ((parts[0] === 'classes' || parts[0] === 'join') && ENROL) ENROL.view(parts);   // enrol.js
     else viewHome();
   }
   // "Letterman 0.1.2 alpha": the number, and the stage as a word beside it (app/version.js)
@@ -450,7 +446,7 @@
   }
   window.addEventListener('resize', () => { measureBars(); maybeRelayout(); });
 
-  // ------------------------------------------------------------------ THE RUNNING HEAD (Charter law: every student screen says where you are)
+  // ------------------------------------------------------------------ THE RUNNING HEAD (every student screen says where you are)
   // On every screen, at every width: four levels, each remembering where the student was below it (Home with the
   // student's name; the course; the module; the step, "n of N"), what is done and open, and the strip of every step
   // grouped by section with the ribbon at the student's place. A listener hears the step line and then the count.
@@ -493,7 +489,7 @@
     const w1 = lv === 'module' ? mo.title : stepTitle(st);
     const seg = (key, k, v, href, label, extra = '') => `<li class="sg-${key}"><a class="seg${lv === key ? ' on' : ''}" data-level="${key}" href="${href}" aria-label="${esc(label)}"${lv === key ? ` aria-current="${key === 'step' ? 'step' : 'page'}"` : ''}>${extra}<span class="k" aria-hidden="true">${k}</span><span class="v" aria-hidden="true">${v}</span></a></li>`;
     // the count is heard straight after the step line: one phrase, no paragraph or other node between them
-    const hic = HI ? HI.countLine() : '';   // "hand-in 1 of 8" (M2-23)
+    const hic = HI ? HI.countLine() : '';   // "hand-in 1 of 8"
     const tally = `<span class="tally anc-count"><span class="sr-only">${c.done} done, ${c.open} open${c.opt ? `, ${c.opt} of them optional` : ''}${hic ? `, ${esc(hic)}` : ''}</span><span aria-hidden="true"><b>${c.done}</b> done<span class="dot"> · </span><b>${c.open}</b> open${c.opt ? ` <span class="optn">(${c.opt} optional)</span>` : ''}${hic ? `<span class="hi-count"><span class="dot"> · </span>${esc(hic)}</span>` : ''}</span></span>`;
     return `<header class="appbar anchor head" role="banner"${uiLang()} style="${seriesOfModel(model)}">
       <div class="head-row">
@@ -513,7 +509,7 @@
       ${stripHTML(model, here)}
     </header>`;
   }
-  // The account button (the Designer's app bar): it holds the display name, Settings and your data, and sign-in.
+  // The account button: it holds the display name, Settings and your data, and sign-in.
   // Never on the stage: the class must not see the teacher's account. The account id is never on the page.
   const PERSON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   function acctHTML() {
@@ -567,17 +563,17 @@
     if (/^#\/?$/.test(h)) loadListings();
     // signed in or out: the values shown are this account's or none, and a self-check says where it will be kept
     if ($('[data-mplace], [data-mrow]')) loadMeasures(true).then(paintMeasures);
-    if (ENROL) ENROL.accountChanged();   // enrol.js (M2-21): a join a guest started goes on after their sign-in
+    if (ENROL) ENROL.accountChanged();   // enrol.js: a join a guest started goes on after their sign-in
     if (HI) HI.refresh().then(ch => { if (zoneFromClass() || ch) redrawSoft(); });
   }
-  // A student in a class sees the class's own time zone, which its teacher set; signed out, the course's again (M1-26).
+  // A student in a class sees the class's own time zone, which its teacher set; signed out, the course's.
   function zoneFromClass() {
     const k = HI && HI.classes && HI.classes[0];
     if (!setZone((k && k.time_zone) || COURSE.meta.time_zone)) return false;
     recheckLocks();
     return true;
   }
-  // The account's hand-ins and replies arrived (M2-23): the screens that show them are drawn again, where nothing is
+  // The account's hand-ins and replies arrived: the screens that show them are drawn again, where nothing is
   // being typed and no sheet is open, at the same place on the page.
   function redrawSoft() {
     const typing = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -587,7 +583,7 @@
     else refreshAnchor();
   }
 
-  // ------------------------------------------------------------------ the contents, with leaders and folios (B's table of contents, at three sizes)
+  // ------------------------------------------------------------------ the contents, with leaders and folios, at three sizes
   let lastRail = null;
   function contentsHTML(model, mode, here, live) {
     const f = model.folder, onStep = mode === 'rail' && live;
@@ -610,7 +606,7 @@
     return { prev, next: i >= 0 ? L[i + 1] || null : null };
   }
 
-  // ------------------------------------------------------------------ M2-24: the classes, the announcements, the module's own words
+  // ------------------------------------------------------------------ the classes, the announcements, the module's own words
   // What the service gives (the enrolments and open_classes() data): each section shows only what came back, and is
   // absent, never a placeholder, when nothing did. A guest reads the public listings only; nothing of theirs is sent.
   let LISTINGS = null, listingsAsked = 0;
@@ -620,7 +616,7 @@
     ACC.listings(courseKey).then(r => { if (ask !== listingsAsked || !r) return; LISTINGS = r; if (/^#\/?$/.test(decodeURIComponent(location.hash || '#/'))) drawService(); }).catch(() => { });
   }
   // "Got it" is kept against the class and the time the words last changed (the time written when never edited), so a
-  // student who put an announcement away sees the teacher's edited text once more (the Manager's decision, M2-24).
+  // student who put an announcement away sees the teacher's edited text once more.
   const editedAt = n => (n.changed_at && new Date(n.changed_at) > new Date(n.written_at)) ? n.changed_at : n.written_at;
   const seenKey = n => `${n.class_id}|${editedAt(n)}`;
   function noticesFor() {
@@ -628,13 +624,12 @@
     const seen = mem.seen || {};
     return (LISTINGS.notices || []).map(c => ({ cls: c, note: (c.notes || []).find(n => !seen[seenKey(n)]) })).filter(x => x.note);
   }
-  // The day an announcement was written, said in the teacher's time zone (the class's), as the Designer's card does:
-  // "Wednesday 14 October". A zone the browser does not know falls back to the reader's own.
+  // The day an announcement was written, said in the teacher's time zone (the class's): "Wednesday 14 October". A zone the browser does not know falls back to the reader's own.
   function noteDay(at, tz) {
     const f = z => new Intl.DateTimeFormat('en-GB', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, z ? { timeZone: z } : {})).format(at);
     try { return f(tz); } catch (e) { return f(null); }
   }
-  // The card, as the Designer wrote it: "From {teacher display name} · {date, teacher's time zone}", the text, an
+  // The card: "From {teacher display name} · {date, teacher's time zone}", the text, an
   // optional link, and "Edited" if the teacher changed it.
   function noticeHTML(x) {
     const n = x.note, long = n.body.length > 260;
@@ -655,9 +650,9 @@
   }
   function classesHTML() {
     if (!LISTINGS) return '';
-    if (ENROL) return ENROL.homeHTML(LISTINGS);   // enrol.js (M2-21): the same two sections, with Join, Leave and the times
+    if (ENROL) return ENROL.homeHTML(LISTINGS);   // enrol.js: the same two sections, with Join, Leave and the times
     const mine = LISTINGS.mine || [], open = (LISTINGS.open || []).filter(o => !mine.some(m => m.class_id === o.class_id));
-    const li = c => `<li><b>${esc(c.title)}</b><span>${classLine(c)}</span>${c.course && c.course !== courseKey ? '' : ''}</li>`;
+    const li = c => `<li><b>${esc(c.title)}</b><span>${classLine(c)}</span></li>`;
     let h = '';
     if (mine.length) h += `<section class="card classes mine" aria-labelledby="cl-h"><h2 id="cl-h" class="kicker">Your classes</h2><ul class="cls">${mine.map(li).join('')}</ul></section>`;
     if (open.length) h += `<section class="card classes open" aria-labelledby="op-h"><h2 id="op-h" class="kicker">Open to join</h2><ul class="cls">${open.map(li).join('')}</ul>
@@ -699,8 +694,8 @@
     };
   }
 
-  // ------------------------------------------------------------------ HOME: the reading room (M2-24, M1-24)
-  // The Designer's people: a first-time guest, a returning guest, a student signed in with one class or two, and a
+  // ------------------------------------------------------------------ HOME
+  // Written for a first-time guest, a returning guest, a student signed in with one class or two, and a
   // student between terms. One primary action on the screen, always the student's own next step. The week card is the
   // first thing under the greeting; a teacher's announcement for a class sits just above it, one card per class.
   function viewHome() {
@@ -717,13 +712,13 @@
     const dateline = `${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}<span aria-hidden="true"> · </span><span class="sr-only">. </span>${esc(courseShort)}${cur ? `, ${esc(UNIT)} ${cur.module} of ${COURSE.meta.modules || L.length}` : ''}`;
 
     // the week card: where the student left off, or this unit's start, or, between terms, when the next one opens. While
-    // the teacher is live, joining the class is its first choice (M2-22, live.js).
+    // the teacher is live, joining the class is its first choice (live.js).
     let week;
     const live = LIVE ? LIVE.weekHTML() : '';
     const wk = ctx && cur && (ctx.folder === cur.folder || started(ctx)) ? ctx : curModel;
     if (wk) {
       // the card shows where the student left off; its one action continues from there (contStep)
-      const c = counts(wk), went = started(wk), r = contStep(wk), left = r, st = wk.steps[left], mo = modOf(wk);   // one truth: the resume point (F5)
+      const c = counts(wk), went = started(wk), r = contStep(wk), left = r, st = wk.steps[left], mo = modOf(wk);   // the resume point
       const orient = COURSE.modules.find(m => m.module === 0 && m.folder && COURSE.packages[m.folder]);
       const upNext = wk.steps.slice(r + 1, r + 5).map(s => `<li><a href="#/m/${wk.folder}/${s.idx}"><span class="tt">${esc(stepTitle(s))}</span><span class="leader" aria-hidden="true"></span><span class="folio"><span class="sr-only">step </span>${s.idx + 1}</span></a></li>`).join('');
       const firstList = wk.steps.slice(0, 4).map(s => `<li><a href="#/m/${wk.folder}/${s.idx}"><span class="tt">${esc(stepTitle(s))}</span><span class="leader" aria-hidden="true"></span><span class="folio"><span class="sr-only">step </span>${s.idx + 1}</span></a></li>`).join('');
@@ -746,7 +741,7 @@
         </div>
       </section>`;
     } else {
-      // between terms: nothing is open today
+      // between terms: nothing is open
       week = `<section class="spread week between" aria-labelledby="week-h">
         <div class="leaf lf">
           <span class="bookmark" aria-hidden="true">${RIBBON}</span>
@@ -805,11 +800,9 @@
   }
 
   // ------------------------------------------------------------------ COURSE: the title page and its contents
-  // MOUNT POINT for board row M2-31 (the Director's ruling of 2026-10-09): how learning is measured is the Academy's
-  // (a grade, a self-check, a progress check, a rubric, a reward system), named course by course. This is B's place for
-  // it, the row after "Modules" in the "This course" panel. It renders from the course's data only: the course field
-  // and its renderer are M2-31's to build here. Until a course names one, the row is absent: Letterman writes no words
-  // of its own about grades in this panel.
+  // Measures: how learning is measured belongs to the course (a grade, a self-check, a progress check, a rubric, a
+  // reward system). The course-level ones show as rows after "Modules" in the "This course" panel, from the course's
+  // data only: Letterman writes no words of its own about grades.
   //
   // The course names each measure (course.json meta.measures, and a module's own list in module.json meta.measures,
   // checked by tools/build.mjs): its label and description in the course's words, its scale, who records it and where it
@@ -847,7 +840,7 @@
   const valueLine = (m, model, v) => m.per === 'course' || !model ? `${m.label}: ${v}` : `${m.label}, ${modName(modOf(model))}: ${v}`;
   const openModels = () => MODS().filter(x => x.open).map(x => buildModel(x.folder)).filter(Boolean);
   // every value line of one measure, module by module, for this student
-  // bare: under a card that already carries the measure's label (Heard back), the line leaves the label off (P6)
+  // bare: under a card that already carries the measure's label (Heard back), the line leaves the label off
   function valueLines(m, bare) {
     const line = (model, v) => bare ? (m.per === 'course' || !model ? v : `${modName(modOf(model))}: ${v}`) : valueLine(m, model, v);
     if (m.per === 'course') { const v = valueOf(m, null); return v ? [line(null, v)] : []; }
@@ -856,7 +849,6 @@
   const shows = (m, place) => (m.shows || []).includes(place);
   const linesHTML = lines => lines.length ? `<ul class="m-vals">${lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : '';
   function measureRow(course) {
-    void course;
     return M.courseMeasures.filter(m => shows(m, 'course')).map(m => `<div class="m-row" data-mrow="${esc(m.id)}"><dt>${esc(m.label)}</dt><dd>${m.description ? `<span class="m-desc">${esc(m.description)}</span>` : ''}${linesHTML(valueLines(m))}</dd></div>`).join('');
   }
   // the module opener: the module's own measures, each a card in the course's words, with this module's value
@@ -983,7 +975,7 @@
     setTitle(model.meta.title);
     const c = counts(model), mo = modOf(model), m = ms(model.id);
     const went = started(model);
-    const here = went ? contStep(model) : null;   // one truth on the opener: the head, the contents and the button (F5)
+    const here = went ? contStep(model) : null;   // the head, the contents and the button all name the resume point
     const target = model.steps[contStep(model)];
     const fb = allFeedback().find(f => f.m === model.id);
     const w = moduleWords(model, 2);
@@ -1030,7 +1022,7 @@
   // Below 761 px wide (the app's own width, so the stage's chart-beside mode counts too) the contents rail folds away
   // and the guide is the page's second pane: Lesson or Guide.
   // Up to 1100 px (a tablet, a small laptop) the guide has no margin beside the lesson: it is the page's second pane
-  // there too, behind the same Lesson and Guide switch, and the contents rail stays from 761 px (app.css; the Designer's S2)
+  // there too, behind the same Lesson and Guide switch, and the contents rail stays from 761 px (app.css)
   const NARROW = 1100;
   const isNarrow = () => app.clientWidth <= NARROW;
   let pane = 'lesson', guideHidden = false, guideAt = null, narrowAt = null;
@@ -1069,7 +1061,7 @@
         ? `Every explanation is open. You can still answer each prompt first. <button type="button" class="linkbtn" id="rf">Close them again</button>`
         : `Guessing first is the method, but it is your call. <button type="button" class="linkbtn" id="rf">I would rather read first: open every explanation</button>`}</div>`;
     }
-    const inPortal = HI && HI.ready(model);   // a student in a class hands in here (M2-23); everyone else, on Discord
+    const inPortal = HI && HI.ready(model);   // a student in a class hands in here; everyone else, on Discord
     if (handinHere(model, st)) body += inPortal ? HI.cardHTML(model) : handinHTML(model);
     const opener = st.si === 0 && !st.pids.length && b.steps[0] === idx;
     const rail = `<nav class="rail" aria-label="Contents of ${esc(modLong(mo))}"${uiLang()}>
@@ -1184,12 +1176,12 @@
   // ------------------------------------------------------------------ prompts: produce, then read
   function mountPrompt(el, model, pid) {
     const p = model.prompts[pid];
-    if (!p) { el.innerHTML = `<p class="muted">[prompt ${esc(pid)} is not described in module.json]</p>`; return; }
+    if (!p) { el.innerHTML = `<p class="muted">A question belongs here but could not be shown (${esc(pid)}).</p>`; return; }
     el.style.cssText = `--ph:var(--ph-${phaseOf(model.steps.find(s => s.pids.includes(pid))?.block || {})})`;
     // a type this renderer does not know shows its ask with a text answer (standard §4a, §11 rule 3); the by-hand types are named
     const kind = { chart: mountChart, choice: mountChoice, 'short-answer': mountText, 'long-answer': mountText, reflect: mountReflect, sketch: mountOffPage, animate: mountOffPage, record: mountOffPage }[p.type] || mountText;
     kind(el, model, p);
-    // r2 quirk: the question is often written twice, once in the block's prose and once as the prompt's ask.
+    // The question is often written twice, once in the block's prose and once as the prompt's ask.
     // When the paragraph just above says the same thing, the widget's copy stays for screen readers only.
     const prev = el.previousElementSibling;
     const words = t => new Set(String(t).toLowerCase().match(/[a-z0-9]+/g) || []);
@@ -1381,7 +1373,7 @@
 
   // ------------------------------------------------------------------ THE CHART INSTRUMENT
   function parseAxis(u, fallback) {
-    if (u && typeof u === 'object') return Object.assign({ step: 1 }, fallback, u);           // r3: {min,max,step,snap}
+    if (u && typeof u === 'object') return Object.assign({ step: 1 }, fallback, u);           // an axis given as {min,max,step,snap}
     const s = String(u || '');
     const m = s.match(/(-?\d+(?:\.\d+)?)\s*(?:\(([^)]*)\))?\s*to\s*(-?\d+(?:\.\d+)?)\s*(?:\(([^)]*)\))?/);
     const name = s.split(',')[0].trim();
@@ -1688,7 +1680,7 @@
     window.addEventListener('resize', onR);
   }
 
-  // ------------------------------------------------------------------ hand in (Discord, M1)
+  // ------------------------------------------------------------------ hand in (Discord)
   // Where the hand-in shows (standard §4): on a submit block if the path has one; if not, directly after
   // the block named by assignment.in, which is the last screen of that block.
   function handinHere(model, st) {
@@ -1727,7 +1719,6 @@
     send.onclick = async () => {
       const member = ACC && ACC.state === 'member';
       const name = member ? ACC.name : $('#hi-name').value.trim();
-      const file = null;   // the student attaches the video in Discord, not here
       const note = $('#hi-note').value.trim();
       const self = Object.values(model.prompts).find(p => p.type === 'reflect');
       const sa = self && ms(model.id).answers[self.id];
@@ -1743,7 +1734,7 @@
         note ? `Note: ${note}` : null,
         `(sent from Letterman.)`
       ].filter(Boolean).join('\n');
-      const done = () => { ms(model.id).handin = { at: new Date().toISOString(), file: file ? file.name : null }; persist(); closeSheet(true); route(); };
+      const done = () => { ms(model.id).handin = { at: new Date().toISOString(), file: null }; persist(); closeSheet(true); route(); };   // the file is attached in Discord, never here
       if (CFG.prototype) {
         sheet(`<p><span class="proto">prototype</span></p><h2>(prototype) would send</h2>
           <p>On a phone, this opens the share sheet with your file and the message below. You pick <b>${esc(CFG.discord.server)}</b>, then <b>${esc(CFG.discord.handinChannel)}</b>. On a computer it copies the message and opens the channel, and you drop the file in.</p>
@@ -1753,8 +1744,8 @@
         $('#sh-ok').onclick = done; $('#sh-x').onclick = () => closeSheet();
         return;
       }
-      // Live: one hand-in channel for every class; each student starts a private thread there that only
-      // they and the teacher see (the Academy's setup, 2026-10-02). The page copies; the student posts.
+      // One hand-in channel for every class; each student starts a private thread there that only they and the
+      // teacher see. The page copies; the student posts.
       const thread = `${courseShort}, ${unitName(model.meta.module)}: ${name || 'your name'}`;
       sheet(`<h2>Hand it in on Discord</h2>
         <ol class="hsteps">
@@ -1781,7 +1772,7 @@
   function allFeedback() {
     const out = [];
     Object.entries(mem.modules).forEach(([id, m]) => (m.feedback || []).forEach(f => out.push(f)));
-    if (HI) out.push(...HI.feedback());   // replies to hand-ins made in Letterman (M2-23)
+    if (HI) out.push(...HI.feedback());   // replies to hand-ins made in Letterman
     return out.sort((a, b) => String(b.received).localeCompare(String(a.received)));
   }
   function b64dec(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); }
@@ -1817,7 +1808,7 @@
       </article>`;
     }).join('') : `<div class="card heard-none"><p>Nothing yet. When the teacher replies to work you handed in here, the reply shows on this page. A reply in ${esc(CFG.discord.server)} carries a link instead: open it on this device and the feedback lands here too.</p></div>`;
     const ctx = contextModel(), last = lastStep(ctx);
-    // what the course shows on Heard back (M2-31): only where it names a measure for it
+    // what the course shows on Heard back: only where it names a measure for it
     const hm = anyMeasure() ? heardMeasuresHTML() : '';
     app.innerHTML = header({ model: ctx, idx: last, level: 'heard' }) + `<main id="main" class="lv lv-page"${uiLang()}><div class="page-col">
       <p class="kicker">Your teacher, to you</p><h1>Heard back</h1>${anyMeasure() ? `<div class="m-place" data-mplace="heard">${hm}</div>` : ''}${body}
@@ -1826,13 +1817,12 @@
     focusMain();
   }
 
-  // ------------------------------------------------------------------ settings and your data (the Designer's one pane)
+  // ------------------------------------------------------------------ settings and your data (one pane)
   // By category, defaults first: Account (guest by default), Appearance (match the system), Your data (this device keeps
   // nothing until yes; a signed-in student's work is carried between devices; moving and erasing it behind one closed
   // section), and Teaching only for an account the service holds as a teacher. A destructive choice is never the filled
-  // button and never holds the focus when its sheet opens: the safe one does (the Designer's F6). Rulings: M2-20, M2-28, Charter law 8.
-  // moveOpen: "Move or erase your work" stays as the student left it when the pane is drawn again (slot 10: the defaults
-  // first, the rest behind one closed section)
+  // button and never holds the focus when its sheet opens: the safe one does.
+  // moveOpen: "Move or erase your work" stays open or closed as the student left it when the pane is drawn again
   let settingsFlash = '', deskOff = null, moveOpen = false;
   // the desktop app's bridge (desktop/src/preload.cjs); absent in a browser
   const DESK = window.LettermanDesktop && window.LettermanDesktop.isDesktop ? window.LettermanDesktop : null;
@@ -1960,7 +1950,7 @@
       let anyway = false;   // a post Discord would not delete was named, and the student chose to go on
       $('#sh-ok').onclick = async () => {
         $('#sh-ok').disabled = true;
-        // the posts first (the Director, 2026-10-09: "Yes, they can delete"); one that will not go is said plainly
+        // the student's Discord posts are deleted first; one that will not go is said plainly
         if (DS && !anyway) {
           const r = await DS.deleteMyPosts();
           if (r.failed) {
@@ -2027,7 +2017,7 @@
     onDismiss = opts.onDismiss || null;
     const bg = document.createElement('div');
     bg.className = 'sheet-bg';
-    bg.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"${uiLang()}><button type="button" class="sheet-x" aria-label="Close"></button>${html.replace('<h2>', '<h2 id="sheet-h">')}</div>`;   // a close control at the top of every sheet (the Designer's preflight): the same as Escape
+    bg.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"${uiLang()}><button type="button" class="sheet-x" aria-label="Close"></button>${html.replace('<h2>', '<h2 id="sheet-h">')}</div>`;   // a close control at the top of every sheet: the same as Escape
     bg.addEventListener('click', e => { if (e.target === bg || (e.target.closest && e.target.closest('.sheet-x'))) closeSheet(); });
     bg.addEventListener('keydown', e => {
       if (e.key === 'Escape') { e.preventDefault(); closeSheet(); }
@@ -2159,11 +2149,11 @@
     has: f => !!COURSE.packages[f] && !LOCKED[f], go,
     // a class going live or ending: the home page redraws (its first choice changes) unless something is being typed
     onChange: () => { refreshAnchor(); const h = decodeURIComponent(location.hash || '#/'); if (/^#\/?$/.test(h) && !$('.sheet-bg') && !(document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))) { routeInner(); placeNet(); } } }) : null;
-  // enrol.js (M2-21): classes open to join, joining and leaving; its screens are painted under the app bar
+  // enrol.js: classes open to join, joining and leaving; its screens are painted under the app bar
   ENROL = window.LMEnrol && ACC ? window.LMEnrol.create({ acc: ACC, stage: STAGE, esc, sheet, closeSheet, content: CONTENT, setTitle, go,
     refresh: () => { const f = document.activeElement; routeInner(); placeNet(); if (f && f.isConnected && f.closest('.sheet')) f.focus(); },
     paint: inner => { const ctx = contextModel(); app.innerHTML = header({ model: ctx, idx: lastStep(ctx), level: 'classes' }) + `<main id="main" class="lv lv-page"><div class="page-col enrol-page">${inner}</div></main>`; placeNet(); measureBars(); if (!$('.sheet-bg')) focusMain(); } }) : null;
-  // The hand-in inside the portal and the class's conversation (M2-23): app/handin.js and app/discuss.js, drawn on this
+  // The hand-in inside the portal and the class's conversation: app/handin.js and app/discuss.js, drawn on this
   // file's own page: the running head, and the one-column page of Heard back and Settings.
   const parts = { CFG, COURSE, courseKey, esc, ms, get mem() { return mem; }, persist, acc: () => ACC, sheet, closeSheet, route, get when() { return WHEN; }, unit: UNIT,
     setTitle, focusMain, modLabel, lastStep, returnTo, announce,

@@ -2,14 +2,14 @@
 // the installer's own output; nothing here is a claim until a release has been made and published.
 window.LETTERMAN_RELEASE = {
   "released": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "stage": "alpha",
   "file": "Letterman-Setup.exe",
-  "bytes": 156685824,
-  "url": "https://github.com/Heirloom-Outpost/theforge-letterman/releases/download/v0.2.0/Letterman-Setup.exe",
-  "notesUrl": "https://github.com/Heirloom-Outpost/theforge-letterman/releases/tag/v0.2.0",
+  "bytes": 156683776,
+  "url": "https://github.com/Heirloom-Outpost/theforge-letterman/releases/download/v0.2.1/Letterman-Setup.exe",
+  "notesUrl": "https://github.com/Heirloom-Outpost/theforge-letterman/releases/tag/v0.2.1",
   "sha256": {
-    "Letterman-Setup.exe": "bcc7e365 657e3fb0 aa6ce0cf 161e558f 58d02e93 6387238e fc788474 fe56845d",
-    "letterman-0.2.0-full.nupkg": "ebf1992f 867e4497 7e3f4457 54933a52 7839ffa0 f8415788 dddef73d 19439208"
+    "Letterman-Setup.exe": "ad9408c7 77af3712 7db18604 52c56be6 c0e79ee4 b5258f56 edf70f59 e145ff86",
+    "letterman-0.2.1-full.nupkg": "1dd76ff4 1b4fe3db 015feae0 2cae1b2c e7e7573f b2552c17 b3be8f7b 44b8310d"
   }
 };

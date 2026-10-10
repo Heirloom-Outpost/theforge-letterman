@@ -1,8 +1,8 @@
-// The app's own settings, plain defaults only. Content never carries these (Course Package Standard r2, §1: "no
-// submission paths... Those belong to the app"), and the app names no course, server or channel: this deployment's
-// Discord server, channels and public address live in letterman.deployment.json at the root of the repository, and
-// tools/build.mjs adds them to the copy of this file that the page loads (board row M2-27). A person's own ids go in
-// letterman.local.json (never saved in the repository): the build adds them too.
+// The app's own settings, plain defaults only. Content never carries these (the Course Package Standard leaves
+// submission paths to the app), and the app names no course, server or channel: this deployment's Discord server,
+// channels and public address live in letterman.deployment.json at the root of the repository, and tools/build.mjs
+// adds them to the copy of this file that the page loads. A person's own ids go in letterman.local.json (never saved
+// in the repository): the build adds them too.
 window.LETTERMAN_CONFIG = {
   prototype: false,                       // true mocks the Discord hand-off as "(prototype) would send"
   siteUrl: '',                            // the public address: from the deployment file

@@ -1,4 +1,4 @@
-/* The live room on the student's page (M2-22): the Live button in the running head, the first choice on the week card,
+/* The live room on the student's page: the Live button in the running head, the first choice on the week card,
    and the line on a step while the student follows the class. Every colour is a token from app.css's tokens block
    (tools/tokens.mjs checks this file too): the Live chip is the stage's own (--live-bg, --live-ink), the star is gold.
    Never on the stage: live.js does not run there. */

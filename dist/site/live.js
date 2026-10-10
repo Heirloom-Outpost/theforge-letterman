@@ -1,9 +1,8 @@
 // Letterman's live room, on the student's own page: the Live button for everyone; the roster and the star when
-// signed in. Ruling: M2-22, the Director's mark of 2026-10-08 ("Live button for all, roster and star when signed in;
-// takes in M1-25"): "While you teach, every student's own page shows a Live button that takes them to the step you're
-// on, guests included. For signed-in students, a roster in your console lights up who is here, their committed answers
-// reach you as they commit, and you give a gold star live, seen only by that student. The stage and its OBS view stay
-// as they are." Limit: "the free plan holds 200 live connections at once."
+// signed in. While a teacher teaches, every student's page (guests included) shows a Live button that takes them to
+// the teacher's step. For a signed-in student in the class, the console's roster shows them, their committed answers
+// reach the teacher as they commit, and the teacher can give them a gold star that only they see. The stage is not
+// touched. The service's free plan holds 200 live connections at once, so a page connects only when Live is pressed.
 //
 // What this page does, and what it never does:
 //   - With no service configured, and on the stage (?stage), nothing here runs.
