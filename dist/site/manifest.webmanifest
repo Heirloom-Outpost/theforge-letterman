@@ -1,6 +1,6 @@
 {
   "name": "Letterman",
-  "description": "Eight weeks of the foundations of 2D animation, drawn by hand in Blender's Grease Pencil, with an optional Toon Boom Harmony track. One module a week moves from a bouncing ball through drawing and timing, cycles, character and pose, sound and voice, and scene craft, to a final piece of 30 to 60 seconds that each student animates and voices. There are no grades and no tests to pass, and AI organizes the course and touches nothing a student makes.",
+  "description": "Letterman, the learning portal of Heirloom Estate Academy.",
   "short_name": "Letterman",
   "start_url": "./#/",
   "scope": "./",

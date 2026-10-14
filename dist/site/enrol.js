@@ -40,9 +40,10 @@
   const addDays = (date, n) => { const [y, m, d] = String(date).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
   // One date format everywhere on the student page: the device's own, as app.js writes every other
   // date ("Monday, October 19" and "6:00 PM" on an American English device; "Monday 19 October" and "18:00" on a British one)
-  const dayLabel = (at, tz) => new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long' }).format(at);
-  const clockLabel = (at, tz) => new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(at);
-  const weekdayLabel = (at, tz) => new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'long' }).format(at);
+  // (when.js says them, once, for the whole page; the plain formatter only stands in where when.js is not loaded)
+  const dayLabel = (at, tz) => window.LMWhen ? window.LMWhen.dayIn(at, tz) : new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long' }).format(at);
+  const clockLabel = (at, tz) => window.LMWhen ? window.LMWhen.clockIn(at, tz) : new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(at);
+  const weekdayLabel = (at, tz) => window.LMWhen ? window.LMWhen.weekdayIn(at, tz) : new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'long' }).format(at);
   // "Pacific time": the zone's everyday name. A name the zone's own formatter does not give falls back to its place.
   function zoneName(tz, at) {
     let n = '';
@@ -74,7 +75,9 @@
   // ------------------------------------------------------------------------------- the calendar file, built here
   // One event per meeting, each at its own instant in UTC, so a daylight-saving change between meetings is right in
   // any calendar (RFC 5545). The service keeps no length for a meeting, so each event is the moment it starts.
-  function icsText(c, courseTitle, stamp) {
+  // events: [{ uid, start: Date (an instant) | date: 'YYYY-MM-DD' (a whole day), summary, description }]. The file the
+  // class's meetings and the term's dates (calendar.js) are both written with.
+  function icsFile(events, stamp, school) {
     const esc = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
     const utc = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const fold = line => {
@@ -87,16 +90,23 @@
       out.push(cur);
       return out.join('\r\n ');
     };
-    const weeks = Math.max(1, +c.weeks || 1), tz = c.time_zone || 'UTC';
-    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Heirloom Estate Academy//Letterman//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
-    for (let n = 1; n <= weeks; n++) {
-      const at = instant(addDays(c.starts_on, 7 * (n - 1)), c.meets_at, tz);
-      lines.push('BEGIN:VEVENT', `UID:${c.class_id}-${n}@letterman`, `DTSTAMP:${utc(stamp || new Date())}`, `DTSTART:${utc(at)}`,
-        `SUMMARY:${esc(`${c.title} (meeting ${n} of ${weeks})`)}`, `DESCRIPTION:${esc(`${courseTitle}. Meets every ${weekdayLabel(at, tz)} at ${clockLabel(at, tz)} ${zoneName(tz, at)}.`)}`,
-        'END:VEVENT');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', `PRODID:-//${esc(school || 'Letterman')}//Letterman//EN`, 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    for (const e of events) {
+      lines.push('BEGIN:VEVENT', `UID:${e.uid}`, `DTSTAMP:${utc(stamp || new Date())}`,
+        e.date ? `DTSTART;VALUE=DATE:${e.date.replace(/-/g, '')}` : `DTSTART:${utc(e.start)}`,
+        `SUMMARY:${esc(e.summary)}`, `DESCRIPTION:${esc(e.description)}`, 'END:VEVENT');
     }
     lines.push('END:VCALENDAR');
     return lines.map(fold).join('\r\n') + '\r\n';
+  }
+  function icsText(c, courseTitle, stamp, school) {
+    const weeks = Math.max(1, +c.weeks || 1), tz = c.time_zone || 'UTC', events = [];
+    for (let n = 1; n <= weeks; n++) {
+      const at = instant(addDays(c.starts_on, 7 * (n - 1)), c.meets_at, tz);
+      events.push({ uid: `${c.class_id}-${n}@letterman`, start: at, summary: `${c.title} (meeting ${n} of ${weeks})`,
+        description: `${courseTitle}. Meets every ${weekdayLabel(at, tz)} at ${clockLabel(at, tz)} ${zoneName(tz, at)}.` });
+    }
+    return icsFile(events, stamp, school);
   }
 
   // ------------------------------------------------------------------------------- the page's part
@@ -104,6 +114,7 @@
     const ACC = o.acc, esc = o.esc, $ = s => document.querySelector(s);
     const on = !!(ACC && ACC.configured) && !o.stage;
     const E = { words: WORDS, when, ics: icsText };
+    const school = () => (o.school ? o.school() : '');   // the page's one place for the school's name (app.js schoolName)
     const courseTitle = c => { const k = (o.content.courses || {})[c.course]; return (k && k.meta && k.meta.title) || String(c.course || '').replace(/_/g, ' '); };
     const isId = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s || ''));
     const offline = () => navigator.onLine === false;
@@ -113,7 +124,7 @@
     // since the screen behind it is drawn again at once.
     function calLink(c, inSheet) {
       if (!c.starts_on) return '';
-      const u = URL.createObjectURL(new Blob([icsText(c, courseTitle(c))], { type: 'text/calendar' }));
+      const u = URL.createObjectURL(new Blob([icsText(c, courseTitle(c), undefined, school())], { type: 'text/calendar' }));
       if (inSheet) setTimeout(() => URL.revokeObjectURL(u), 30 * 60000); else blobs.push(u);
       const file = String(c.title).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'class';
       return `<a class="enrol-cal" href="${u}" download="${esc(file)}.ics">Add to calendar<span class="sr-only">: ${esc(c.title)}</span></a>`;
@@ -175,13 +186,16 @@
           ? `${calLink(c)}<button class="btn quiet small" type="button" data-leave="${id}">Leave<span class="sr-only"> ${esc(c.title)}</span></button>`
           : `<button class="btn quiet small" type="button" data-join="${id}">Join<span class="sr-only"> ${esc(c.title)}</span></button>`}</span></li>`;
     }
-    E.homeHTML = function (L) {
+    // opts.sections: which of the two to draw (default both); opts.course: only the classes of this course (the course
+    // home shows its own class; the school home shows the open ones of every course)
+    E.homeHTML = function (L, opts) {
       if (!on || !L) return '';
       freeBlobs();
-      const mine = L.mine || [], open = (L.open || []).filter(o => !mine.some(m => m.class_id === o.class_id));
+      const sections = (opts && opts.sections) || ['mine', 'open'], ofCourse = c => !(opts && opts.course) || c.course === opts.course;
+      const mine = (L.mine || []).filter(ofCourse), open = (L.open || []).filter(ofCourse).filter(o => !(L.mine || []).some(m => m.class_id === o.class_id));
       let h = '';
-      if (mine.length) h += `<section class="card classes mine" aria-labelledby="cl-h"><h2 id="cl-h" class="kicker">Your classes</h2><ul class="cls">${mine.map(c => itemHTML(c, 'mine')).join('')}</ul></section>`;
-      if (open.length) h += `<section class="card classes open" aria-labelledby="op-h"><h2 id="op-h" class="kicker">Open to join</h2><ul class="cls">${open.map(c => itemHTML(c, 'open')).join('')}</ul>
+      if (mine.length && sections.includes('mine')) h += `<section class="card classes mine" aria-labelledby="cl-h"><h2 id="cl-h" class="kicker">Your classes</h2><ul class="cls">${mine.map(c => itemHTML(c, 'mine')).join('')}</ul></section>`;
+      if (open.length && sections.includes('open')) h += `<section class="card classes open" aria-labelledby="op-h"><h2 id="op-h" class="kicker">Open to join</h2><ul class="cls">${open.map(c => itemHTML(c, 'open')).join('')}</ul>
         ${ACC.state === 'guest' ? `<p class="fine">Joining a class needs an account. <button type="button" class="linkbtn" data-acct="signin">Sign in</button></p>` : ''}</section>`;
       return h;
     };
@@ -192,14 +206,14 @@
       const focus = parts[0] === 'join' ? parts[1] : null;
       // a page of the Academy: its kicker and title, then your classes and the ones open to join
       o.setTitle(focus ? 'Join a class' : 'Classes');
-      const head = `<p class="kicker">The Academy</p><h1>${focus ? 'Join a class' : 'Classes'}</h1>`;
-      if (!on) { o.paint(`${head}<p>Classes need Letterman's class service, and this copy of Letterman has none.</p><p><a class="btn quiet" href="#/">Back to the course</a></p>`); return; }
+      const head = `${school() ? `<p class="kicker">${esc(school())}</p>` : ''}<h1>${focus ? 'Join a class' : 'Classes'}</h1>`;
+      if (!on) { o.paint(`${head}<p>Classes need Letterman's class service, and this copy of Letterman has none.</p><p><a class="btn quiet" href="#/">Back to Home</a></p>`); return; }
       o.paint(`${head}<p class="small muted" role="status">${esc(WORDS.looking)}</p>`);
       freeBlobs();
       const data = await load();
       const now = decodeURIComponent(location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
       if (now[0] !== parts[0] || now[1] !== parts[1]) return;   // the student went elsewhere while this was asked
-      const back = `<p style="margin-top:1rem"><a class="btn quiet block" href="#/">&#8592; Back to the course</a></p>`;
+      const back = `<p style="margin-top:1rem"><a class="btn quiet block" href="#/">&#8592; Back to Home</a></p>`;
       if (data.error) { o.paint(`${head}<p class="enrol-msg" role="status">${esc(problem(data.error))}</p>${back}`); return; }
       const mine = focus && data.mine.find(c => c.class_id === focus);
       const target = focus && data.open.find(c => c.class_id === focus);
@@ -293,5 +307,5 @@
     return E;
   }
 
-  window.LMEnrol = { create, when, ics: icsText, instant, zoneName, WORDS };
+  window.LMEnrol = { create, when, ics: icsText, icsFile, instant, zoneName, WORDS };
 })();

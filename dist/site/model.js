@@ -3,9 +3,41 @@
 (function () {
   'use strict';
   const slash = p => String(p || '').replace(/\\/g, '/');   // a package may write its paths with backslashes
-  window.LMModel = { create(CONTENT) {
-  const courseKey = Object.keys(CONTENT.courses)[0];
-  const COURSE = CONTENT.courses[courseKey];
+  // ------------------------------------------------------------------ step ids and a student's place
+  // A step's id stays the same across revisions of a module for as long as the step does: a step with a prompt is that
+  // prompt's; any other is named by its block and its heading. A repeat of the same name is numbered.
+  function stepKeys(model) {
+    if (model._keys) return model._keys;
+    const seen = {};
+    return model._keys = model.steps.map(st => {
+      const k = st.pids.length ? 'p:' + st.pids[0] : 'b:' + st.block.id + ':' + String(st.h2 || st.lead || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      seen[k] = (seen[k] || 0) + 1;
+      return seen[k] > 1 ? k + '#' + seen[k] : k;
+    });
+  }
+  const sameKeys = (a, b) => a.length === b.length && a.every((k, i) => k === b[i]);
+  // A record of where a student has been (visited: step numbers, last: the step number they left off at), made when the
+  // module's steps were `was` (their ids, by number), put into the numbers of `now`. A visited step that is gone is
+  // dropped. The place a student left off at, when its step is gone, moves to the nearest step that remains (the
+  // earlier one when two are as near); with nothing left to match, to the same number kept inside the module.
+  function renumber(rec, was, now) {
+    const at = new Map(now.map((k, i) => [k, i]));
+    const visited = {};
+    Object.keys(rec.visited || {}).forEach(i => { const j = at.get(was[i]); if (j != null) visited[j] = true; });
+    let last = rec.last;
+    if (Object.keys(rec.visited || {}).length) {
+      const p = Math.max(0, Math.min(was.length - 1, +rec.last || 0));
+      last = at.has(was[p]) ? at.get(was[p]) : null;
+      for (let d = 1; last == null && d <= was.length; d++) for (const e of [p - d, p + d]) if (last == null && was[e] != null && at.has(was[e])) last = at.get(was[e]);
+      if (last == null) last = Math.max(0, Math.min(now.length - 1, p));
+    }
+    return Object.assign({}, rec, { visited, last, steps: now.slice() });
+  }
+
+  window.LMModel = { stepKeys, sameKeys, renumber, create(CONTENT) {
+  // A school with no course yet (nothing published) has no key and an empty course: nothing to open, no words of its own.
+  const courseKey = Object.keys(CONTENT.courses || {})[0] || null;
+  const COURSE = courseKey ? CONTENT.courses[courseKey] : { meta: { title: '', modules: 0 }, modules: [], packages: {}, assets: [], glossary: [] };
   const MODELS = {};
   // The language of the page comes from the course (standard section 3: meta.language, a BCP 47 tag); a module may say its own.
   // A value that is not a tag is ignored. 'en' is used only when the course says nothing.
@@ -190,6 +222,9 @@
     return Number.isFinite(s.max) && !s.levels ? `${v} of ${s.max}${s.unit ? ' ' + s.unit : ''}` : String(v);
   }
 
-  return { courseKey, COURSE, glossary, buildModel, slash, courseMeasures, measuresOf, checkValue, valueWords, okLang, courseLang };
+  // a module's steps are read again from its package the next time they are asked for (after a revision was put in)
+  const forget = folder => { delete MODELS[folder]; };
+
+  return { courseKey, COURSE, glossary, buildModel, forget, stepKeys, sameKeys, renumber, slash, courseMeasures, measuresOf, checkValue, valueWords, okLang, courseLang };
   } };
 })();

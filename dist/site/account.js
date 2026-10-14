@@ -11,10 +11,13 @@
 //     asks the service only for the two public listings (the open classes and their announcements), as a plain
 //     read with the page's public key (A.listings), and, the same way, which class is live.
 //   - Until the account has said its two yeses, the sign-in is held only for this tab (sessionStorage), never in
-//     the browser's lasting storage, and "Not now" erases the sign-in from the service at once.
+//     the browser's lasting storage, and the button "Not now: keep nothing" erases the sign-in from the service at once.
 //   - The account id is used to ask the service for the account's own rows and is never put on the page.
-//   - Whether someone is a teacher is read from the service's teachers table (which no one can write to
-//     through the service), never from anything the user can write.
+//   - What an account may do (teacher, admin, tester) is what the service's my_roles() says about the signed-in
+//     account (roles that only an admin, or the project's owner, can give), never anything the user can write.
+//     Nothing about roles is kept by this page; the desktop app keeps its own copy (desktop/src/roles.cjs).
+//   - For a tester only: the app says which version it runs, once when it starts signed in (report_my_version), and
+//     feedback goes to the service only when the tester presses Send (A.sendFeedback).
 (function () {
   'use strict';
   const SELF = document.currentScript && document.currentScript.src;
@@ -31,6 +34,8 @@
     age: 'Letterman accounts are for people 13 or older.',
     keep: 'Nothing is kept until you say yes.',
     unreachable: 'The class service is not answering right now. The week still works. Joining, hand-ins and announcements wait until it is back.',
+    waits: 'Close. Your sign-in waits until you finish joining.',
+    waiting: 'Your sign-in is waiting. Finish joining from the account button.',
     offline: 'You are offline. This is the week as you last saw it. Your answers save on this device.'
   };
 
@@ -81,12 +86,38 @@
     return libP;
   }
   const isNetwork = e => !!e && (e.name === 'AuthRetryableFetchError' || e.status === 0 || /fetch|network|load failed/i.test(String(e.message || e)));
+  // The roles, as my_roles() answers them: exactly teacher, admin and tester, each true only if the service said true.
+  const noRoles = () => ({ teacher: false, admin: false, tester: false });
+  const rolesFrom = x => (x && typeof x === 'object' ? { teacher: x.teacher === true, admin: x.admin === true, tester: x.tester === true } : noRoles());
+  // The version this page runs ("0.3.0 alpha", app/version.js) and whether it runs in the Letterman app or a web page:
+  // what a tester's feedback and version report carry, and nothing more.
+  const runsIn = () => (window.LettermanDesktop && window.LettermanDesktop.isDesktop ? 'app' : 'web');
+  function appNow() {
+    const v = window.LETTERMAN_VERSION || {};
+    return v.version ? { app_version: v.version + (v.stage ? ' ' + v.stage : ''), platform: runsIn() } : null;
+  }
+  // A file's place in the feedback bucket: a random id, then its own name with only plain characters kept, so the
+  // address names no account (supabase/migrations/20261012000300_testers.sql).
+  function randomId() {
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  }
+  function fileName(raw) {
+    const n = String(raw || '').replace(/[^A-Za-z0-9._ -]+/g, '_').replace(/\s+/g, ' ').trim().slice(-120).replace(/^[ .]+/, '');
+    return n || 'file';
+  }
 
   // ---------------------------------------------------------------------------------------------------------
   // Carrying work between devices: the device's record of each module and the account's copy are merged answer
   // by answer, the later committed answer winning, earlier tries kept from both, nothing lost.
   function mergeModule(a, b) {
     if (!a) return b; if (!b) return a;
+    // two records made at different revisions of the module count their steps differently: b's places are moved to
+    // the step ids a's numbers stand for (a record with no step ids is taken to agree with the other)
+    const L = window.LMModel;
+    if (L && L.renumber && Array.isArray(a.steps) && Array.isArray(b.steps) && !L.sameKeys(a.steps, b.steps)) b = L.renumber(b, b.steps, a.steps);
     const out = Object.assign({}, a);
     const at = x => (x && x.at) || '';
     out.answers = Object.assign({}, a.answers || {});
@@ -108,6 +139,7 @@
     out.readInline = Object.assign({}, b.readInline || {}, a.readInline || {});
     out.readFirst = !!(a.readFirst || b.readFirst);
     out.last = Object.keys(a.visited || {}).length ? a.last : b.last;
+    if (a.steps || b.steps) out.steps = a.steps || b.steps;
     const fb = new Map(); for (const f of [...(b.feedback || []), ...(a.feedback || [])]) if (f && f.id != null) fb.set(f.id, f);
     out.feedback = [...fb.values()].sort((x, y) => String(y.received || '').localeCompare(String(x.received || '')));
     if (a.handin || b.handin) out.handin = at(b.handin) > at(a.handin) ? b.handin : (a.handin || b.handin);
@@ -125,9 +157,15 @@
       state: 'guest',          // guest | starting | needs-yes | member
       name: '', provider: '', teacher: false, problem: null, syncing: false,
       busy: false,             // a sign-in is under way (its sheets, the yes, bringing work in): the page asks nothing else
-      get sync() { const d = o.device.get(); return d.sync !== false; }
+      // carryLater: the person closed "Bring your answers?" without choosing; nothing is sent until they choose
+      get sync() { const d = o.device.get(); return d.sync !== false && !d.carryLater; }
     };
-    if (!configured || o.stage) { A.start = async () => A; A.changed = () => { }; A.ask = async () => ({ error: { code: 'none' } }); A.act = A.ask; A.client = () => Promise.resolve(null); A.myClasses = async () => []; A.myHandIns = async () => []; return A; }
+    // what the account may do, as the service last said: always exactly these three, each true or false
+    let rolesNow = noRoles();
+    A.roles = () => Object.assign({}, rolesNow);
+    if (!configured || o.stage) { A.start = async () => A; A.changed = () => { }; A.ask = async () => ({ error: { code: 'none' } }); A.act = A.ask; A.client = () => Promise.resolve(null); A.myClasses = async () => []; A.myHandIns = async () => [];
+      A.verifyRoles = async () => noRoles(); A.verifyTeacher = async () => false; A.sendFeedback = async () => ({ ok: false, error: 'failed' }); return A; }
+    const setRoles = r => { rolesNow = rolesFrom(r); A.teacher = rolesNow.teacher; };
 
     const store = makeAuthStore();
     let client = null, user = null, lastPushed = {}, pushT = null, sentAt = 0, sentTo = '';
@@ -154,27 +192,41 @@
       const { data: s, error: se } = await c.auth.getSession();
       if (se) { trouble(se); }
       user = s && s.session ? s.session.user : null;
-      if (!user) { A.state = 'guest'; A.name = ''; A.teacher = false; tell(); return A; }
+      if (!user) { A.state = 'guest'; A.name = ''; setRoles(null); tell(); return A; }
       // the account as the service has it now, not as it was stored at sign-in; a sign-in the service no longer
       // knows (the account was deleted on another device) leaves this one a guest
       const { data: fresh, error: fe } = await c.auth.getUser();
       if (fe && !isNetwork(fe) && (fe.status === 401 || fe.status === 403 || fe.status === 404)) {
         try { await c.auth.signOut({ scope: 'local' }); } catch (e) { }
-        store.removeItem(AUTH_KEY); user = null; A.state = 'guest'; A.name = ''; A.teacher = false; tell(); return A;
+        store.removeItem(AUTH_KEY); user = null; A.state = 'guest'; A.name = ''; setRoles(null); tell(); return A;
       }
       if (fe) trouble(fe); else if (fresh && fresh.user) user = fresh.user;
       const ids = (user.identities || []).map(i => i.provider);
       A.provider = ids.includes('discord') || (user.app_metadata || {}).provider === 'discord' ? 'discord' : 'email';
-      const { data: prof, error: pe } = await c.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
-      if (pe) { trouble(pe); A.state = store.keep ? 'member' : 'starting'; tell(); return A; }
+      const { data: prof, error: pe, status: ps } = await c.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+      // a service that answers with a server error (a paused project) cannot be reached either, as probe() and ask() say
+      if (pe) { trouble(ps === 0 || ps >= 500 ? { status: 0 } : pe); A.state = store.keep ? 'member' : 'starting'; tell(); return A; }
       fine();
-      if (!prof) { A.state = 'needs-yes'; A.name = ''; A.teacher = false; tell(); return A; }
+      if (!prof) { A.state = 'needs-yes'; A.name = ''; setRoles(null); tell(); return A; }
       store.promote();
       A.state = 'member'; A.name = prof.display_name;
-      const { data: t, error: te } = await c.from('teachers').select('granted_at').maybeSingle();
-      A.teacher = !te && !!t;
+      // one call says what this account may do; with no answer, it may do nothing that needs a role
+      const { data: rl, error: re, status: rs } = await c.rpc('my_roles');
+      if (re && (rs === 0 || rs >= 500 || isNetwork(re))) trouble({ status: 0 });
+      setRoles(re ? null : rl);
+      if (rolesNow.tester) reportVersion(c);
       tell();
       return A;
+    }
+    // A tester's app says which version it runs, once per account each time the page starts (report_my_version keeps
+    // it for a tester and ignores anyone else). Quiet: nothing waits for it, and nothing it meets is shown.
+    const reported = new Set();
+    function reportVersion(c) {
+      if (!user || reported.has(user.id)) return;
+      const app = appNow();
+      if (!app) return;
+      reported.add(user.id);
+      try { Promise.resolve(c.rpc('report_my_version', app)).then(() => { }, () => { }); } catch (e) { }
     }
 
     // Start: only if a sign-in is held here, or the page is coming back from Discord. Otherwise nothing at all.
@@ -317,7 +369,9 @@
         <p class="small"><a href="${esc(PRIVACY)}" target="_blank" rel="noopener">Your privacy<span class="sr-only"> (opens a new tab)</span></a>: what is kept, who sees it, and how to erase it.</p>
         <p class="msg" role="alert" id="ft-msg"></p>
         <button class="btn primary block" type="submit" id="ft-go">Join Letterman</button></form>
-        <button class="btn quiet block" type="button" id="ft-not">Not now: keep nothing</button>`, { focus: '#ft-name', onDismiss: notNow });
+        <button class="btn quiet block" type="button" id="ft-not">Not now: keep nothing</button>`, { focus: '#ft-name', closeLabel: WORDS.waits, onDismiss: waiting });
+      // The close mark and Escape only close the box: the state stays "needs-yes" (the sign-in waits; the account
+      // menu, Settings and the class pages offer "Finish joining"). Only the button erases the sign-in.
       const msg = t => { const m = document.getElementById('ft-msg'); if (m) m.textContent = t; };
       document.getElementById('ft-not').onclick = notNow;
       document.getElementById('ft-form').onsubmit = async e => {
@@ -341,7 +395,8 @@
         } catch (x) { trouble(x); msg(WORDS.failed); }
       };
     }
-    // "Not now" before the yes: the sign-in is erased from the service at once, and nothing is left here.
+    function waiting() { o.closeSheet(true, true); o.announce && o.announce(WORDS.waiting); }
+    // The button "Not now: keep nothing" before the yes: the sign-in is erased from the service at once, and nothing is left here.
     async function notNow() {
       o.closeSheet(true);
       try {
@@ -350,7 +405,7 @@
         await c.auth.signOut({ scope: 'local' });
       } catch (e) { trouble(e); }
       store.removeItem(AUTH_KEY); store.removeItem(AUTH_KEY + '-code-verifier'); store.removeItem(AUTH_KEY + '-user');
-      user = null; A.state = 'guest'; A.name = ''; A.teacher = false; tell();
+      user = null; A.state = 'guest'; A.name = ''; setRoles(null); tell();
     }
     A.finishJoining = () => { if (A.state === 'needs-yes') firstTime(''); };
 
@@ -358,23 +413,25 @@
     async function offerBringIn() {
       const d = o.device.get();
       const n = countAnswers(d.modules);
-      if (!n || d.sync === false || d.carriedFor === 'account') { await push(true); return; }
+      if (!n || d.sync === false || d.carriedFor === 'account') { delete d.carryLater; await push(true); return; }
       o.sheet(`<h2>Bring your answers?</h2>
         <p>Bring the ${n} answer${n === 1 ? '' : 's'} on this device into your account?</p>
         <p class="small muted">Then they follow you to any device you sign in on.</p>
         <div style="display:grid;gap:.5rem"><button class="btn primary" type="button" id="bi-yes">Yes, bring them in</button>
-        <button class="btn quiet" type="button" id="bi-no">No, keep them on this device only</button></div>`, { focus: '#bi-yes', onDismiss: () => no() });
-      // Closing the sheet without an answer is a no: nothing moves into the account without a yes.
+        <button class="btn quiet" type="button" id="bi-no">No, keep them on this device only</button></div>`, { focus: '#bi-yes', onDismiss: () => later() });
+      // Closing the sheet is not an answer: nothing moves into the account without a yes, and the question comes again
+      // at the next sign-in on this device.
       let done; const asked = new Promise(r => { done = r; });
-      const no = () => { o.closeSheet(true); d.sync = false; o.device.save(); tell(); done(); };
-      document.getElementById('bi-yes').onclick = async () => { o.closeSheet(true); d.sync = true; d.carriedFor = 'account'; o.device.save(); await push(true); tell(); done(); };
+      const later = () => { o.closeSheet(true, true); d.carryLater = true; o.device.save(); tell(); done(); };
+      const no = () => { o.closeSheet(true); d.sync = false; delete d.carryLater; o.device.save(); tell(); done(); };
+      document.getElementById('bi-yes').onclick = async () => { o.closeSheet(true); d.sync = true; delete d.carryLater; d.carriedFor = 'account'; o.device.save(); await push(true); tell(); done(); };
       document.getElementById('bi-no').onclick = no;
       await asked;
     }
 
     // ------------------------------------------------------------------------------- pull and push
     async function pull() {
-      if (A.state !== 'member' || !A.sync) return;
+      if (A.state !== 'member' || o.device.get().sync === false) return;
       try {
         const c = await getClient();
         const { data, error } = await c.from('progress').select('module,state');
@@ -412,7 +469,7 @@
     }
     A.changed = () => { if (A.state === 'member' && A.sync) push(false); };
     A.setSync = async on => {
-      const d = o.device.get(); d.sync = !!on; if (on) d.carriedFor = 'account'; o.device.save();
+      const d = o.device.get(); d.sync = !!on; delete d.carryLater; if (on) d.carriedFor = 'account'; o.device.save();
       if (on) { await pull(); await push(true); }
       tell();
     };
@@ -429,13 +486,21 @@
         return { ok: true, name: A.name };
       } catch (e) { trouble(e); return { ok: false, message: WORDS.failed }; }
     };
+    // In the desktop app, the roles it keeps on the computer for this account go too (before the sign-in does, so the
+    // app can still read whose they are).
+    async function forgetDesktopRoles() {
+      const d = window.LettermanDesktop;
+      if (d && typeof d.forgetRoles === 'function') { try { await d.forgetRoles(); } catch (e) { } }
+    }
     A.signOut = async () => {
+      await forgetDesktopRoles();
       await push(true);
       try { const c = await getClient(); await c.auth.signOut({ scope: 'local' }); } catch (e) { }
       store.removeItem(AUTH_KEY); store.removeItem(AUTH_KEY + '-code-verifier'); store.removeItem(AUTH_KEY + '-user'); store.keep = false;
-      user = null; lastPushed = {}; A.state = 'guest'; A.name = ''; A.teacher = false; A.provider = '';
+      user = null; lastPushed = {}; A.state = 'guest'; A.name = ''; setRoles(null); A.provider = '';
+      await forgetDesktopRoles();   // and again once the sign-in is gone, in case the app asked in between
       // the next person to sign in on this device is asked again before this device's work goes anywhere
-      const d = o.device.get(); delete d.carriedFor; delete d.sync; o.device.save(); tell();
+      const d = o.device.get(); delete d.carriedFor; delete d.sync; delete d.carryLater; o.device.save(); tell();
     };
     A.exportService = async () => {
       try {
@@ -448,15 +513,55 @@
     A.deleteAccount = async () => {
       try {
         const c = await getClient();
+        // files sent as a tester are kept by the Storage API outside the database: they are removed through it first,
+        // and the service refuses to delete the account while any remain
+        const files = await c.rpc('my_feedback_files');
+        if (files.error) { trouble(files.error); return false; }
+        const names = (files.data || []).filter(x => typeof x === 'string');
+        if (names.length) {
+          const gone = await c.storage.from('feedback').remove(names);
+          if (gone.error) { trouble(gone.error); return false; }
+        }
         const { error } = await c.rpc('delete_my_account');
         if (error) { trouble(error); return false; }
         fine();
+        await forgetDesktopRoles();
         try { await c.auth.signOut({ scope: 'local' }); } catch (e) { }
       } catch (e) { trouble(e); return false; }
       store.removeItem(AUTH_KEY); store.removeItem(AUTH_KEY + '-code-verifier'); store.removeItem(AUTH_KEY + '-user'); store.keep = false;
-      user = null; lastPushed = {}; A.state = 'guest'; A.name = ''; A.teacher = false; A.provider = '';
-      const d = o.device.get(); delete d.carriedFor; delete d.sync; o.device.save(); tell();
+      user = null; lastPushed = {}; A.state = 'guest'; A.name = ''; setRoles(null); A.provider = '';
+      const d = o.device.get(); delete d.carriedFor; delete d.sync; delete d.carryLater; o.device.save(); tell();
       return true;
+    };
+    // ------------------------------------------------------------------------------- a tester's feedback
+    // Sent only when the tester presses Send: the note, the file they chose (uploaded first, to a random address in the
+    // feedback bucket), the diagnostics exactly as they were shown, and the version and kind of app. The service takes
+    // it only from a tester (send_feedback). A file whose note did not go through is removed again.
+    //   -> { ok: true } or { ok: false, error: 'offline' | 'toolarge' | 'failed' }
+    A.sendFeedback = async ({ note, file, diagnostics }) => {
+      if (A.state !== 'member' || !user) return { ok: false, error: 'failed' };
+      const app = appNow();
+      if (!app) return { ok: false, error: 'failed' };
+      const why = e => (isNetwork(e) ? 'offline' : 'failed');
+      let c = null, path = null;
+      const unsend = async () => { if (c && path) { try { await c.storage.from('feedback').remove([path]); } catch (e) { } } };
+      try {
+        c = await getClient();
+        if (file) {
+          path = randomId() + '/' + fileName(file.name);
+          const up = await c.storage.from('feedback').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+          if (up.error) {
+            path = null;
+            const big = String(up.error.statusCode || up.error.status || '') === '413' || /maximum allowed size|too large/i.test(String(up.error.message || ''));
+            if (!big) trouble(up.error);
+            return { ok: false, error: big ? 'toolarge' : why(up.error) };
+          }
+        }
+        const { error } = await c.rpc('send_feedback', Object.assign({ note, file_path: path, diagnostics: diagnostics || null }, app));
+        if (error) { trouble(error); await unsend(); return { ok: false, error: why(error) }; }
+        fine();
+        return { ok: true };
+      } catch (e) { trouble(e); await unsend(); return { ok: false, error: why(e) }; }
     };
     // ------------------------------------------------------------------------------- hand-ins and classes
     // The hand-in, the conversation and the console's hand-ins use the one client above (A.client), and ask for it only
@@ -494,13 +599,15 @@
         fine(); return true;
       } catch (e) { if (A.problem !== 'unreachable') { A.problem = 'unreachable'; tell(); } return false; }
     };
-    // The teaching half asks the service each time it opens, never a flag kept here. When the answer is no, A.problem
-    // says whether the service said it ('unreachable' means it could not be asked).
-    A.verifyTeacher = async () => {
-      if (A.state === 'guest' && !store.held().lasting && !store.held().tab) { await A.probe(); return false; }
-      try { await loadAccount(); } catch (e) { trouble(e); return false; }
-      return A.state === 'member' && A.teacher;
+    // What the account may do, asked of the service each time (my_roles()), never a flag kept here; the answer is then
+    // readable as A.roles(). With no roles, A.problem says whether the service said so ('unreachable' means it could
+    // not be asked). The teaching half asks through verifyTeacher, which is the teacher role of this answer.
+    A.verifyRoles = async () => {
+      if (A.state === 'guest' && !store.held().lasting && !store.held().tab) { await A.probe(); setRoles(null); return noRoles(); }
+      try { await loadAccount(); } catch (e) { trouble(e); return noRoles(); }
+      return A.state === 'member' ? A.roles() : noRoles();
     };
+    A.verifyTeacher = async () => (await A.verifyRoles()).teacher;
     // ------------------------------------------------------------------------------- the home page's classes
     // "Your classes" (a signed-in student's enrolments), "Open to join" (open_classes()), and each class's
     // announcements. A guest reads only the two public listings: a plain GET with the page's public key,
@@ -513,8 +620,8 @@
       if (!r.ok) throw Object.assign(new Error('the service answered ' + r.status), { status: r.status });
       return r.json();
     }
-    // the live room (live.js) asks which class is live the same way, and only that
-    A.publicRead = fn => fn === 'live_now' ? publicRead(fn) : Promise.reject(new Error('not a public read'));
+    // the live room (live.js) asks which class is live the same way, and the page asks the school's name (school()): only those
+    A.publicRead = fn => fn === 'live_now' || fn === 'school' ? publicRead(fn) : Promise.reject(new Error('not a public read'));
     // A class as the pages show it: never an account id (the service's functions return none).
     const classOf = x => ({ class_id: x.class_id, title: x.title, course: x.course, starts_on: x.starts_on, meets_at: x.meets_at || null,
       time_zone: x.time_zone, weeks: x.weeks || null, teacher: x.teacher || '', joined_at: x.joined_at || null,

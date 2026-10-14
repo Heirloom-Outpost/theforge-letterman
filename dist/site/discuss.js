@@ -54,6 +54,8 @@
     // it. Read from the service as the student; the rules show no one
     // else's, so a classmate's page offers no button on anyone else's post.
     let ownPosts = {};
+    // the name the school's posts go out under, as the discussion function says ("Letterman" until it says otherwise)
+    let viaName = 'Letterman';
     async function loadOwn(p) {
       ownPosts = {};
       const a = x.acc(); if (!a || a.state !== 'member') return;
@@ -67,7 +69,7 @@
       const w = x.when.say(m.at);
       const mine = m.via && ownPosts[m.id];
       const files = (m.files || []).map(f => `<li><a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.name)}<span class="sr-only"> (a file in Discord, opens a new tab)</span></a></li>`).join('');
-      return `<li class="talk-msg"><p class="talk-who"><b>${esc(m.name)}</b>${m.via ? ' <span class="tag talk-via">via Letterman</span>' : ''} <span class="talk-when">${esc(w.main)}${w.local ? `. <span class="when-local">${esc(w.local)}</span>` : ''}${m.edited ? ' (edited)' : ''}</span></p>
+      return `<li class="talk-msg"><p class="talk-who"><b>${esc(m.name)}</b>${m.via ? ` <span class="tag talk-via">via ${esc(viaName)}</span>` : ''} <span class="talk-when">${esc(w.main)}${w.local ? `. <span class="when-local">${esc(w.local)}</span>` : ''}${m.edited ? ' (edited)' : ''}</span></p>
         ${m.text ? `<p class="talk-text">${esc(m.text)}</p>` : ''}${files ? `<ul class="talk-files">${files}</ul>` : ''}
         ${mine ? `<p class="talk-del"><button class="linkbtn" type="button" data-talk-del="${esc(mine)}">Delete my post</button></p>` : ''}</li>`;
     }
@@ -83,6 +85,7 @@
       } catch (e) { r = null; }
       const now = document.getElementById('talk-list'); if (!now) return;
       now.setAttribute('aria-busy', 'false');
+      if (r && typeof r.as === 'string' && r.as.trim()) { viaName = r.as.trim(); const h = document.getElementById('talk-via-name'); if (h) h.textContent = viaName; }
       if (!r || !Array.isArray(r.messages)) { now.innerHTML = `<p class="muted">${WORDS.failed}</p>`; return; }
       now.innerHTML = r.messages.length ? `<ol class="talk-list">${r.messages.map(messageHTML).join('')}</ol>` : `<p class="muted">${WORDS.empty}</p>`;
       now.querySelectorAll('[data-talk-del]').forEach(b => b.onclick = () => askDelete(p, b.dataset.talkDel));
@@ -124,7 +127,7 @@
       if (!svc() || !a || !a.configured) return `<p class="small">To write, ${ext(p.url, 'post in Discord', 'small quiet')}</p>`;
       if (a.state === 'member') return `<form id="talk-form" class="talk-form" novalidate>
           <div class="field"><label for="talk-text">Your message</label><textarea id="talk-text" rows="3" maxlength="2000" aria-describedby="talk-help"></textarea>
-          <p class="help" id="talk-help">It goes into this ${esc(x.unit)}'s post in ${esc(server())} as <b>${esc(a.name)}</b> via Letterman, and pings no one.</p></div>
+          <p class="help" id="talk-help">It goes into this ${esc(x.unit)}'s post in ${esc(server())} as <b>${esc(a.name)}</b> via <span id="talk-via-name">${esc(viaName)}</span>, and pings no one.</p></div>
           <p class="msg" role="alert" id="talk-msg"></p>
           <button class="btn primary" type="submit" id="talk-send">Post</button></form>`;
       if (a.state === 'needs-yes') return `<p>Finish joining Letterman to post here.</p><button class="btn quiet" type="button" id="talk-finish">Finish joining</button>`;
